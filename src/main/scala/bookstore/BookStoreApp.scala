@@ -2,8 +2,9 @@ package bookstore
 
 import cats.effect.IOApp
 import cats.effect.{ExitCode, IO}
+import bookstore.config.Config
 
-object Hello extends IOApp.Simple {
+object BookStoreApp extends IOApp.Simple {
 
   val simplestProgram: IO[Unit] = 
     for {
@@ -11,7 +12,12 @@ object Hello extends IOApp.Simple {
       name  <- IO.readLine
       _     <- IO.println(s"Welcome $name") 
     } yield ()
+
+  val program: IO[Unit] = 
+    Config.load[IO].map(appConfig => 
+      println(appConfig.toString()))
+
   override def run: IO[Unit] = 
-    simplestProgram
+    program
 }
 
