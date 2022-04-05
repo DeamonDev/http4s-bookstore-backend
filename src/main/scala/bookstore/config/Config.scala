@@ -12,17 +12,17 @@ import cats.effect.syntax.all._
 object Config {
   def load[F[_]: Sync]: F[AppConfig] = 
     for {
-      httpConfigEither   <- Sync[F].pure(
-        ConfigSource.default
-                    .load[HttpConfig]
-                    .fold(configReaderFailures => Left(new Throwable(configReaderFailures.toString())), 
-                          Right(_)))
+      httpConfigEither   <- load[F, HttpConfig]
       httpConfig         <- Sync[F].fromEither(httpConfigEither)
-      dbConfigEither     <- Sync[F].pure(
-        ConfigSource.default
-                    .load[DbConfig]
-                    .fold(configReaderFailures => Left(new Throwable(configReaderFailures.toString())),
-                    Right(_)))
+      dbConfigEither     <- load[F, DbConfig]
       dbConfig           <- Sync[F].fromEither(dbConfigEither)
     } yield AppConfig(httpConfig, dbConfig)
+
+  private def load[F[_]: Sync, A](implicit reader: ConfigReader[A]) = 
+    Sync[F].pure(
+      ConfigSource.default
+                  .load[A]
+                  .fold(crf => Left(new Throwable(crf.toString())),
+                        Right(_))
+    )
 }
