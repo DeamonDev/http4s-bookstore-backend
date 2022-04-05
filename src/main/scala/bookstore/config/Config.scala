@@ -11,13 +11,13 @@ import cats.effect.syntax.all._
 object Config {
   def load[F[_]: Sync]: F[AppConfig] = 
     for {
-      httpConfigEither   <- load[F, HttpConfig]
+      httpConfigEither   <- loadPart[F, HttpConfig]
       httpConfig         <- Sync[F].fromEither(httpConfigEither)
-      dbConfigEither     <- load[F, DbConfig]
+      dbConfigEither     <- loadPart[F, DbConfig]
       dbConfig           <- Sync[F].fromEither(dbConfigEither)
     } yield AppConfig(httpConfig, dbConfig)
 
-  private def load[F[_]: Sync, A](implicit reader: ConfigReader[A]) = 
+  private def loadPart[F[_]: Sync, A](implicit reader: ConfigReader[A]) = 
     Sync[F].pure(
       ConfigSource.default
                   .load[A]
