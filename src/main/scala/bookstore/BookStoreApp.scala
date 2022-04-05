@@ -13,6 +13,7 @@ import doobie._
 import doobie.implicits._
 
 import scala.concurrent.duration._
+import bookstore.services.HttpServer
 
 object BookStoreApp extends IOApp.Simple {
 
@@ -23,9 +24,11 @@ object BookStoreApp extends IOApp.Simple {
       xa            <- appResources.getPostgresTransactor()
       i             <- 42.pure[ConnectionIO].transact(xa)
       _             <- IO.println(s"fetched: $i")
-      _             <- IO.sleep(5.seconds)
       j             <- "Papiesz-wapiesz".pure[ConnectionIO].transact(xa)
       _             <- IO.println(s"fetched: $j")
+      _             <- HttpServer.make[IO](appConfig).use { _ =>
+                         IO.never 
+                       }
     } yield ()
 
   override def run: IO[Unit] = 
