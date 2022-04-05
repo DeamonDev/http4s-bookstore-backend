@@ -2,7 +2,6 @@ package bookstore.config
 
 import types._
 
-import pureconfig.ConfigSource
 import pureconfig._
 import pureconfig.generic.auto._
 import cats.effect.kernel.Sync
@@ -22,7 +21,7 @@ object Config {
     Sync[F].pure(
       ConfigSource.default
                   .load[A]
-                  .fold(crf => Left(new Throwable(crf.toString())),
+                  .fold(configReaderFailures => Left(new Throwable(configReaderFailures.toString())),
                         Right(_))
     )
 }
