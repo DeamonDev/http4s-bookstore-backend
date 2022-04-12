@@ -14,6 +14,8 @@ import doobie.implicits._
 
 import scala.concurrent.duration._
 import bookstore.services.HttpServer
+import bookstore.services.Authors
+import bookstore.http.HttpApi
 
 object BookStoreApp extends IOApp.Simple {
 
@@ -22,11 +24,8 @@ object BookStoreApp extends IOApp.Simple {
       appConfig     <- Config.load[IO]
       appResources  <- AppResources.make[IO](appConfig)
       xa            <- appResources.getPostgresTransactor()
-      i             <- 42.pure[ConnectionIO].transact(xa)
-      _             <- IO.println(s"fetched: $i")
-      j             <- "Papiesz-wapiesz".pure[ConnectionIO].transact(xa)
-      _             <- IO.println(s"fetched: $j")
-      _             <- HttpServer.make[IO](appConfig).use { _ =>
+      httpRoutes     = HttpApi.make[IO](xa).routes
+      _             <- HttpServer.make[IO](appConfig, httpRoutes).use { _ =>
                          IO.never 
                        }
     } yield ()

@@ -29,4 +29,12 @@ object Dependencies {
     "org.tpolecat" %% "doobie-specs2"    % doobieVersion % "test",
     "org.tpolecat" %% "doobie-scalatest" % doobieVersion % "test"  
   )
+
+  lazy val circe = Seq(
+    "org.http4s" %% "http4s-circe" % http4sVersion,
+    // Optional for auto-derivation of JSON codecs
+    "io.circe" %% "circe-generic" % "0.14.1",
+    // Optional for string interpolation to JSON model
+    "io.circe" %% "circe-literal" % "0.14.1"
+  )
 }
