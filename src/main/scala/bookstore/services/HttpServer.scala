@@ -28,35 +28,22 @@ import bookstore.config.types._
 import doobie.util.transactor._
 import bookstore.domain.authors._
 
+import org.http4s.server.defaults.Banner
+import org.typelevel.log4cats.Logger
+
 import org.http4s.circe.CirceEntityCodec._
 
 object HttpServer {
 
-  case class PolymorphicRoutes[F[_]: Monad: Async](postgres: Transactor[F]) extends Http4sDsl[F] {
-    val httpRoutes: HttpApp[F] = HttpRoutes.of[F] {
-      case GET -> Root / "welcome" / name => 
-        Ok(s"Welcome, $name")
-      case GET -> Root / "json" / "test" => 
-        Ok(Author(-1, "X", "Y").asJson)
-      case GET -> Root / "author" / firstName / lastName => 
-        val t = for {
-          authorService <- Authors.make[F](postgres)
-          authorOption <- authorService.find(firstName, lastName)
-          author = authorOption match {
-                case Some(author) => author
-                case None => Author(-1, "X", "Y")
-               }
-        } yield author.asJson
+  private def showEmberBanner[F[_]: Logger](s: Server): F[Unit] =
+    Logger[F].info(s"\n${Banner.mkString("\n")}\nHTTP Server started at ${s.address}")
 
-        Ok(t)
-    }.orNotFound
-  }
-
-  def make[F[_]: Async](appCfg: AppConfig, routes: HttpApp[F]) = 
+  def make[F[_]: Async: Logger](appCfg: AppConfig, routes: HttpApp[F]) = 
     EmberServerBuilder
     .default[F]
     .withHost(Host.fromString(appCfg.httpConfig.host).get)
     .withPort(Port.fromString(appCfg.httpConfig.port).get)
     .withHttpApp(routes)
     .build
+    .evalTap(server => showEmberBanner[F](server))
 }

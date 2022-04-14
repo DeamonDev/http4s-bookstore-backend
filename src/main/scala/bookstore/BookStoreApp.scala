@@ -17,15 +17,24 @@ import bookstore.services.HttpServer
 import bookstore.services.Authors
 import bookstore.http.HttpApi
 
+import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
+import bookstore.services.Books
+
+import org.http4s.implicits._
+import org.http4s.server.middleware.CORS
+
 object BookStoreApp extends IOApp.Simple {
+
+  implicit val logger = Slf4jLogger.getLogger[IO]
 
   val forProgram = 
     for { 
       appConfig     <- Config.load[IO]
       appResources  <- AppResources.make[IO](appConfig)
-      xa            <- appResources.getPostgresTransactor()
-      httpRoutes     = HttpApi.make[IO](xa).routes
-      _             <- HttpServer.make[IO](appConfig, httpRoutes).use { _ =>
+      transactor    <- appResources.getPostgresTransactor()
+      httpRoutes     = HttpApi.make[IO](transactor).routes
+      _             <- HttpServer.make[IO](appConfig, CORS(httpRoutes.orNotFound)).use { _ =>
                          IO.never 
                        }
     } yield ()

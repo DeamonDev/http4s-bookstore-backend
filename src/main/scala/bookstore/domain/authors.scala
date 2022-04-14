@@ -9,5 +9,4 @@ object authors {
 
   // implicit val authorDecoder: Decoder[Author] = deriveDecoder[Author]
   // implicit val authorEncoder: Encoder[Author] = deriveEncoder[Author]
-  
 }
