@@ -40,10 +40,13 @@ import io.circe.Decoder
 import io.circe.Encoder
 
 import org.http4s.circe.CirceEntityDecoder._
+import org.http4s.circe.CirceEntityEncoder._
+
+import org.http4s.dsl.Http4sDsl
 
 sealed abstract class Auth[F[_]: Monad: Async](
   postgres: Transactor[F]
-) { 
+) extends Http4sDsl[F] { 
   def verifyRegistration(request: Request[F]): F[Either[String, User]]
   def authUserCookie(): Kleisli[F, Request[F], Either[String, User]]
   def register(): Kleisli[F, Request[F], Response[F]]
@@ -66,7 +69,19 @@ object Auth {
         }
 
       override def authUserCookie(): Kleisli[F, Request[F], Either[String, User]] = ???
-      override def register(): Kleisli[F, Request[F], Response[F]] = ???
+      override def register(): Kleisli[F, Request[F], Response[F]] = Kleisli(request =>
+        for {
+          user <- verifyRegistration(request)
+          response <- user match {
+                        case Left(error) => 
+                          Forbidden(error)
+                        case Right(registeredUser) =>
+                          // add to postgres 
+                          Ok(registeredUser)
+                      }
+        } yield response
+      )
+        
 
       override def onFailure(): AuthedRoutes[String, F] = ???
 

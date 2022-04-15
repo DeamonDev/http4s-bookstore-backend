@@ -9,6 +9,8 @@ import cats.Monad
 
 object users { 
 
+    implicit val userDecoder: Decoder[User] = deriveDecoder[User]
+  implicit val userEncoder: Encoder[User] = deriveEncoder[User]
 
   case class User(userId: Long,
                   username: String,
