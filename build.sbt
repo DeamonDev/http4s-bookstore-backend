@@ -10,7 +10,7 @@ lazy val root = (project in file("."))
     name := "book-store",
     libraryDependencies += scalaTest % Test,
     libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.3",
-    libraryDependencies ++= http4s ++ pureConfig ++ doobie ++ circe ++ log4Cats,
+    libraryDependencies ++= http4s ++ pureConfig ++ doobie ++ circe ++ log4Cats ++ cookies,
   )
 
 

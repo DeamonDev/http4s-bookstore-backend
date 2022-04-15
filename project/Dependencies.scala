@@ -41,4 +41,8 @@ object Dependencies {
     "org.typelevel" %% "log4cats-core"    % "2.2.0",  
     "org.typelevel" %% "log4cats-slf4j"   % "2.2.0",  
   )
+
+  lazy val cookies = Seq(
+   "org.reactormonk" %% "cryptobits" % "1.3"
+  )
 }
