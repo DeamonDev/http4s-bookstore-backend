@@ -1,5 +1,11 @@
 package bookstore.domain
 
+import io.circe._
+import io.circe.generic.semiauto._
+
+import org.http4s.circe._
+import cats.effect.kernel.Async
+import cats.Monad
 
 object users { 
 
@@ -10,6 +16,10 @@ object users {
                   firstName: String,
                   lastName: String,
                   verified: Boolean)
+
+  implicit val userRegistrationDecoder: Decoder[UserRegistration] = deriveDecoder[UserRegistration]
+  implicit val userRegistrationEncoder: Encoder[UserRegistration] = deriveEncoder[UserRegistration]
+//  implicit def decoder[F[_]](implicit F: Async[F]) = jsonOf[F, UserRegistration]
 
   case class UserRegistration(username: String, 
                               password: String,

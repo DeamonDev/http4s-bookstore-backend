@@ -31,6 +31,16 @@ import scala.util.Random
 import org.http4s.ResponseCookie
 import org.http4s.headers.Cookie
 
+import io.circe.syntax._
+import io.circe.generic.semiauto._
+import org.http4s.implicits._
+import org.http4s.circe._
+import cats.MonadThrow
+import io.circe.Decoder
+import io.circe.Encoder
+
+import org.http4s.circe.CirceEntityDecoder._
+
 sealed abstract class Auth[F[_]: Monad: Async](
   postgres: Transactor[F]
 ) { 
@@ -47,8 +57,13 @@ object Auth {
     new Auth[F](postgres) {
       val key = PrivateKey(Codec.toUTF8(Random.alphanumeric.take(20).mkString("")))
       val crypto = CryptoBits(key)
-      val clock = java.time.Clock.systemUTC 
-      override def verifyRegistration(request: Request[F]): F[Either[String,User]] = ???
+      val clock = java.time.Clock.systemUTC
+
+      override def verifyRegistration(request: Request[F]): F[Either[String,User]] = 
+        request.as[UserRegistration].flatMap { userRegistration =>
+          // TODO connect with postgres and check 
+          Async[F].pure(Right(User(1, "JP2", "vatican", "Karol", "Wojtyla", false)))
+        }
 
       override def authUserCookie(): Kleisli[F, Request[F], Either[String, User]] = ???
       override def register(): Kleisli[F, Request[F], Response[F]] = ???
