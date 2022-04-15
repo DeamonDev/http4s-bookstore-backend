@@ -62,13 +62,29 @@ object Auth {
       val crypto = CryptoBits(key)
       val clock = java.time.Clock.systemUTC
 
-      override def verifyRegistration(request: Request[F]): F[Either[String,User]] = 
+      override def verifyRegistration(request: Request[F]): F[Either[String, User]] = 
         request.as[UserRegistration].flatMap { userRegistration =>
           // TODO connect with postgres and check 
           Async[F].pure(Right(User(1, "JP2", "vatican", "Karol", "Wojtyla", false)))
         }
 
-      override def authUserCookie(): Kleisli[F, Request[F], Either[String, User]] = ???
+      override def authUserCookie(): Kleisli[F, Request[F], Either[String, User]] = 
+        Kleisli{request => 
+          val message = 
+            for {
+              header <- request.headers.get[Cookie]
+                                       .toRight("Cookie parsing error")
+              cookie <- header.values.toList.find(_.name == "authcookie")
+                                            .toRight("Couldn't find the cookie")
+              token  <- crypto.validateSignedToken(cookie.content)
+                              .toRight("Cookie invalid")
+              msg    <- Either.catchOnly[NumberFormatException](token.toLong)
+                              .leftMap(_.toString)
+            } yield msg
+
+            message.traverse(retrieveUser.run)
+          }
+                              
       override def register(): Kleisli[F, Request[F], Response[F]] = Kleisli(request =>
         for {
           user <- verifyRegistration(request)
@@ -76,14 +92,19 @@ object Auth {
                         case Left(error) => 
                           Forbidden(error)
                         case Right(registeredUser) =>
-                          // add to postgres 
-                          Ok(registeredUser)
+                          val message = crypto.signToken(registeredUser.userId.toString(), clock.millis().toString())
+                          Ok("Registered!").map(_.addCookie(ResponseCookie("authcookie", message)))
                       }
         } yield response
       )
         
 
-      override def onFailure(): AuthedRoutes[String, F] = ???
+      override def onFailure(): AuthedRoutes[String, F] = Kleisli(req =>
+        OptionT.liftF(Forbidden(req.context)))
+
+      private val retrieveUser: Kleisli[F, Long, User] = Kleisli(_ => 
+        // TODO postgres here
+        Async[F].pure(User(1, "X", "y", "z", "w", false)))
 
       val middleware: AuthMiddleware[F, User] = 
        AuthMiddleware(authUserCookie(), onFailure())
