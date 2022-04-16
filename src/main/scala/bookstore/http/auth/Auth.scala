@@ -43,6 +43,7 @@ import org.http4s.circe.CirceEntityDecoder._
 import org.http4s.circe.CirceEntityEncoder._
 
 import org.http4s.dsl.Http4sDsl
+import bookstore.services.Users
 
 sealed abstract class Auth[F[_]: Monad: Async](
   postgres: Transactor[F]
@@ -69,7 +70,7 @@ object Auth {
         }
 
       override def authUserCookie(): Kleisli[F, Request[F], Either[String, User]] = 
-        Kleisli{request => 
+        Kleisli{ request => 
           val message = 
             for {
               header <- request.headers.get[Cookie]
@@ -99,12 +100,15 @@ object Auth {
       )
         
 
-      override def onFailure(): AuthedRoutes[String, F] = Kleisli(req =>
+      override def onFailure(): AuthedRoutes[String, F] = Kleisli( req =>
         OptionT.liftF(Forbidden(req.context)))
 
-      private val retrieveUser: Kleisli[F, Long, User] = Kleisli(_ => 
-        // TODO postgres here
-        Async[F].pure(User(1, "X", "y", "z", "w", false)))
+      private val retrieveUser: Kleisli[F, Long, User] = Kleisli( userId => 
+        for {
+          usersService <- Users.make[F](postgres)
+          user         <- usersService.findUserById(userId).map(user => user.get)
+        } yield user
+      )
 
       val middleware: AuthMiddleware[F, User] = 
        AuthMiddleware(authUserCookie(), onFailure())
