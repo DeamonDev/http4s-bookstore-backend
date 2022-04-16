@@ -12,6 +12,7 @@ import org.http4s._
 import org.http4s.implicits._
 import org.http4s.server.Router
 import org.http4s.server.middleware._
+import bookstore.http.routes.AuthorizationRoutes
 
 object HttpApi {
   def make[F[_]: Monad: Async](
@@ -26,5 +27,5 @@ sealed abstract class HttpApi[F[_]: Monad: Async](
   private val authorRoutes: HttpRoutes[F] = AuthorRoutes[F](postgres).httpRoutes
   private val bookRoutes: HttpRoutes[F] = BookRoutes[F](postgres).httpRoutes
 
-  val routes = authorRoutes <+> bookRoutes
+  val routes = authorRoutes <+> bookRoutes 
 }

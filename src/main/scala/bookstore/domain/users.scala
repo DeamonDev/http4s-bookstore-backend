@@ -17,6 +17,7 @@ object users {
                   password: String,
                   firstName: String,
                   lastName: String,
+                  email: String,
                   verified: Boolean)
 
   implicit val userRegistrationDecoder: Decoder[UserRegistration] = deriveDecoder[UserRegistration]

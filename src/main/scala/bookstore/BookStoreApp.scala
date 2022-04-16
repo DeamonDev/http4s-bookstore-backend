@@ -23,6 +23,11 @@ import bookstore.services.Books
 
 import org.http4s.implicits._
 import org.http4s.server.middleware.CORS
+import bookstore.http.auth.Auth
+import bookstore.http.routes.AuthorizationRoutes
+import bookstore.services.Users
+import doobie.util.transactor
+import bookstore.domain.users
 
 object BookStoreApp extends IOApp.Simple {
 
@@ -34,7 +39,13 @@ object BookStoreApp extends IOApp.Simple {
       appResources  <- AppResources.make[IO](appConfig)
       transactor    <- appResources.getPostgresTransactor()
       httpRoutes     = HttpApi.make[IO](transactor).routes
-      _             <- HttpServer.make[IO](appConfig, CORS(httpRoutes.orNotFound)).use { _ =>
+      auth          <- Auth.make[IO](transactor)
+      authRoutes     = AuthorizationRoutes[IO](auth).httpRoutes
+      usersService <- Users.make[IO](transactor)
+      id <- usersService.getCurrentIndex()
+      u <- usersService.findUserById(id)
+      _ <- IO.println(u)
+      _             <- HttpServer.make[IO](appConfig, CORS((authRoutes <+> httpRoutes).orNotFound)).use { _ =>
                          IO.never 
                        }
     } yield ()

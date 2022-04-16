@@ -57,16 +57,26 @@ sealed abstract class Auth[F[_]: Monad: Async](
 object Auth {
   def make[F[_]: Monad: Async](
     postgres: Transactor[F]
-  ): Auth[F] = 
-    new Auth[F](postgres) {
+  ): F[Auth[F]] = 
+    Async[F].pure(new Auth[F](postgres) {
       val key = PrivateKey(Codec.toUTF8(Random.alphanumeric.take(20).mkString("")))
       val crypto = CryptoBits(key)
       val clock = java.time.Clock.systemUTC
 
       override def verifyRegistration(request: Request[F]): F[Either[String, User]] = 
         request.as[UserRegistration].flatMap { userRegistration =>
-          // TODO connect with postgres and check 
-          Async[F].pure(Right(User(1, "JP2", "vatican", "Karol", "Wojtyla", false)))
+          for {
+            usersService <- Users.make[F](postgres)
+            username      = userRegistration.username
+            password      = userRegistration.password
+            firstName     = userRegistration.firstName
+            lastName      = userRegistration.lastName
+            email         = userRegistration.email
+            verified      = userRegistration.verified
+            _            <- usersService.create(username, password, firstName, lastName, email, verified)
+            id           <- usersService.getCurrentIndex()
+            u            <- usersService.findUserById(id)
+          } yield Right(u.get)
         }
 
       override def authUserCookie(): Kleisli[F, Request[F], Either[String, User]] = 
@@ -113,5 +123,5 @@ object Auth {
       val middleware: AuthMiddleware[F, User] = 
        AuthMiddleware(authUserCookie(), onFailure())
       
-    }
+    })
 }
