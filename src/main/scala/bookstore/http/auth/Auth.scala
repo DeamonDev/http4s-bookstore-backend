@@ -73,10 +73,8 @@ object Auth {
             lastName      = userRegistration.lastName
             email         = userRegistration.email
             verified      = userRegistration.verified
-            _            <- usersService.create(username, password, firstName, lastName, email, verified)
-            id           <- usersService.getCurrentIndex()
-            u            <- usersService.findUserById(id)
-          } yield Right(u.get)
+            u            <- usersService.create(username, password, firstName, lastName, email, verified)
+          } yield Right(u)
         }
 
       override def authUserCookie(): Kleisli[F, Request[F], Either[String, User]] = 

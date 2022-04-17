@@ -21,7 +21,7 @@ trait Users[F[_]] {
              firstName: String,
              lastName: String,
              email: String,
-             verified: Boolean): F[Int] 
+             verified: Boolean): F[User] 
 }
 
 object Users {
@@ -33,16 +33,26 @@ object Users {
         currentIndexQuery.unique.transact(postgres)
       override def findUserById(userId: Long): F[Option[User]] = 
         findUserByIdQuery(userId).option.transact(postgres)
-
-      override def create(username: String, password: String, firstName: String, lastName: String, email: String, verified: Boolean): F[Int] = 
-        for { 
-          currentIndex <- getCurrentIndex()
-          u            <- createQuery(currentIndex + 1, username, password, firstName, lastName, email, verified).run.transact(postgres)
+      override def create(username: String, password: String, firstName: String, lastName: String, email: String, verified: Boolean) = {
+        // by monadically stacking these ConnectionIO's we can do 
+        // single SQL-transaction in the return statement.
+        // One can also use SMT for more advanced transactions.
+        // See 4 example: https://timwspence.github.io/cats-stm/
+        val userConnectionIO = for { 
+          lv <- currentIndexQuery.unique
+          _  <- createQuery(lv.toInt + 1, username, password, firstName, lastName, email, verified).run
+          u <- findUserByIdQuery(lv + 1).unique
         } yield u
+
+        userConnectionIO.transact(postgres)
+      }
     })
 }
 
 private object UsersSql {
+
+  val lastValQuery: Query0[Long] = 
+    sql"SELECT lastval()".query[Long]
 
   val currentIndexQuery: Query0[Int] = 
     sql"SELECT user_id FROM users ORDER BY user_id DESC LIMIT 1".query[Int]

@@ -42,8 +42,7 @@ object BookStoreApp extends IOApp.Simple {
       auth          <- Auth.make[IO](transactor)
       authRoutes     = AuthorizationRoutes[IO](auth).httpRoutes
       usersService <- Users.make[IO](transactor)
-      id <- usersService.getCurrentIndex()
-      u <- usersService.findUserById(id)
+      u <- usersService.create("AA", "BB", "CC", "DD", "FF", false)
       _ <- IO.println(u)
       _             <- HttpServer.make[IO](appConfig, CORS((authRoutes <+> httpRoutes).orNotFound)).use { _ =>
                          IO.never 
