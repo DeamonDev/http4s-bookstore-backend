@@ -14,9 +14,6 @@ import org.http4s.server.Router
 import org.http4s.server.middleware._
 import bookstore.http.routes.AuthorizationRoutes
 
-//comment 2
-//comment 4
-
 object HttpApi {
   def make[F[_]: Monad: Async](
     postgres: transactor.Transactor[F]
