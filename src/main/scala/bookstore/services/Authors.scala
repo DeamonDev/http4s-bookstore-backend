@@ -38,9 +38,8 @@ object Authors {
 
 private object AuthorsSql {
 
-  val currentIndexQuery: Query0[Int] = 
+  val currentIndexQuery: Query0[Int] =
     sql"SELECT author_id FROM authors ORDER BY author_id DESC LIMIT 1".query[Int]
-
 
   def selectUser(firstName: String, lastName: String) = 
     sql"""SELECT author_id, first_name, last_name FROM authors 
@@ -49,6 +48,4 @@ private object AuthorsSql {
   def createUser(currentIndex: Int, firstName: String, lastName: String) = 
     sql"""INSERT INTO authors (author_id, first_name, last_name) 
           VALUES ($currentIndex, $firstName, $lastName)""".update
-      
-
 }

@@ -17,7 +17,7 @@ import bookstore.http.routes.AuthorizationRoutes
 object HttpApi {
   def make[F[_]: Monad: Async](
     postgres: transactor.Transactor[F]
-  ): HttpApi[F] = 
+  ): HttpApi[F] =
     new HttpApi[F](postgres) {}
 }
 
@@ -27,5 +27,5 @@ sealed abstract class HttpApi[F[_]: Monad: Async](
   private val authorRoutes: HttpRoutes[F] = AuthorRoutes[F](postgres).httpRoutes
   private val bookRoutes: HttpRoutes[F] = BookRoutes[F](postgres).httpRoutes
 
-  val routes = authorRoutes <+> bookRoutes 
+  val routes = authorRoutes <+> bookRoutes
 }

@@ -33,8 +33,8 @@ object BookStoreApp extends IOApp.Simple {
 
   implicit val logger = Slf4jLogger.getLogger[IO]
 
-  val forProgram = 
-    for { 
+  val forProgram =
+    for {
       appConfig     <- Config.load[IO]
       appResources  <- AppResources.make[IO](appConfig)
       transactor    <- appResources.getPostgresTransactor()
@@ -43,12 +43,12 @@ object BookStoreApp extends IOApp.Simple {
       registrationRoutes     = AuthorizationRoutes[IO](auth).httpRoutes
       authedRoutes    = AuthorizationRoutes[IO](auth).authedHttpRoutes
       usersService <- Users.make[IO](transactor)
-      _             <- HttpServer.make[IO](appConfig, CORS((registrationRoutes <+> httpRoutes <+> authedRoutes).orNotFound)).use { _ =>
-                         IO.never 
-                       }
+      _             <- HttpServer.make[IO](appConfig,
+                                           CORS((registrationRoutes <+> httpRoutes <+> authedRoutes).orNotFound)
+                                          ).use { _ => IO.never }
     } yield ()
 
-  override def run: IO[Unit] = 
+  override def run: IO[Unit] =
     forProgram
 }
 
