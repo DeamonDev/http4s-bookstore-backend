@@ -23,6 +23,8 @@ object Authors {
   def make[F[_]: Monad: Async](postgres: Transactor[F]): F[Authors[F]] = 
     Async[F].pure(new Authors[F] {
 
+      // comment!
+
       private def getCurrentIndex() = 
         currentIndexQuery.unique.transact(postgres)
 
