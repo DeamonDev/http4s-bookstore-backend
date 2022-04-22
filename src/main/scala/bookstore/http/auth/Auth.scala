@@ -52,6 +52,7 @@ sealed abstract class Auth[F[_]: Monad: Async](
   def authUserCookie(): Kleisli[F, Request[F], Either[String, User]]
   def register(): Kleisli[F, Request[F], Response[F]]
   def onFailure(): AuthedRoutes[String, F]
+  def authRoutes(authedRoutes: AuthedRoutes[User, F]): HttpRoutes[F]
 }
 
 object Auth {
@@ -120,6 +121,9 @@ object Auth {
 
       val middleware: AuthMiddleware[F, User] = 
        AuthMiddleware(authUserCookie(), onFailure())
-      
+
+      override def authRoutes(authedRoutes: AuthedRoutes[User,F]): HttpRoutes[F] = 
+         middleware(authedRoutes)
+
     })
 }

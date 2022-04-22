@@ -40,9 +40,10 @@ object BookStoreApp extends IOApp.Simple {
       transactor    <- appResources.getPostgresTransactor()
       httpRoutes     = HttpApi.make[IO](transactor).routes
       auth          <- Auth.make[IO](transactor)
-      authRoutes     = AuthorizationRoutes[IO](auth).httpRoutes
+      registrationRoutes     = AuthorizationRoutes[IO](auth).httpRoutes
+      authedRoutes    = AuthorizationRoutes[IO](auth).authedHttpRoutes
       usersService <- Users.make[IO](transactor)
-      _             <- HttpServer.make[IO](appConfig, CORS((authRoutes <+> httpRoutes).orNotFound)).use { _ =>
+      _             <- HttpServer.make[IO](appConfig, CORS((registrationRoutes <+> httpRoutes <+> authedRoutes).orNotFound)).use { _ =>
                          IO.never 
                        }
     } yield ()

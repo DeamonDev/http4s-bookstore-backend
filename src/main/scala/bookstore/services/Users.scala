@@ -16,6 +16,7 @@ import doobie.util.pos
 trait Users[F[_]] {
   def getCurrentIndex(): F[Int]
   def findUserById(userId: Long): F[Option[User]]
+  def findByUserName(username: String): F[Option[User]]
   def create(username: String,
              password: String, 
              firstName: String,
@@ -33,6 +34,9 @@ object Users {
         currentIndexQuery.unique.transact(postgres)
       override def findUserById(userId: Long): F[Option[User]] = 
         findUserByIdQuery(userId).option.transact(postgres)
+
+      override def findByUserName(username: String): F[Option[User]] = 
+        findByUserNameQuery(username).option.transact(postgres)
       override def create(username: String, password: String, firstName: String, lastName: String, email: String, verified: Boolean) = {
         // by monadically stacking these ConnectionIO's we can do 
         // single SQL-transaction in the return statement.
@@ -61,6 +65,9 @@ private object UsersSql {
     sql"""SELECT user_id, username, password, first_name, last_name, email, verified
             FROM users u 
             WHERE u.user_id = $userId""".query[User]
+
+  def findByUserNameQuery(username: String) = 
+    sql"SELECT * FROM users WHERE username = '$username'".query[User]
 
   def createQuery(currentIndex: Int, username: String, password: String, firstName: String, lastName: String, email: String, verified: Boolean) = 
     sql"""INSERT INTO users (user_id, username, password, first_name, last_name, email, verified)

@@ -30,4 +30,10 @@ object users {
                               lastName: String,
                               email: String,
                               verified: Boolean)
+
+
+  case class UserLogin(username: String, password: String) // don't do this at home
+  
+  implicit val userLoginDecoder: Decoder[UserLogin] = deriveDecoder[UserLogin]
+  implicit val userLoginEncoder: Encoder[UserLogin] = deriveEncoder[UserLogin]
 }
