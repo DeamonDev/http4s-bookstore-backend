@@ -7,9 +7,9 @@ import org.http4s.circe._
 import cats.effect.kernel.Async
 import cats.Monad
 
-object users { 
+object users {
 
-    implicit val userDecoder: Decoder[User] = deriveDecoder[User]
+  implicit val userDecoder: Decoder[User] = deriveDecoder[User]
   implicit val userEncoder: Encoder[User] = deriveEncoder[User]
 
   case class User(userId: Long,
@@ -33,7 +33,8 @@ object users {
 
 
   case class UserLogin(username: String, password: String) // don't do this at home
-  
+
   implicit val userLoginDecoder: Decoder[UserLogin] = deriveDecoder[UserLogin]
   implicit val userLoginEncoder: Encoder[UserLogin] = deriveEncoder[UserLogin]
+
 }

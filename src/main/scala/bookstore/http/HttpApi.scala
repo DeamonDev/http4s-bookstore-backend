@@ -2,7 +2,7 @@ package bookstore.http
 
 import cats.effect.kernel.Async
 import cats.Monad
-import doobie.util.transactor
+import doobie.util.transactor._
 import bookstore.http.routes.AuthorRoutes
 import bookstore.http.routes.BookRoutes
 import doobie.util.pos
@@ -16,16 +16,17 @@ import bookstore.http.routes.AuthorizationRoutes
 
 object HttpApi {
   def make[F[_]: Monad: Async](
-    postgres: transactor.Transactor[F]
+    postgres: Transactor[F]
   ): HttpApi[F] =
     new HttpApi[F](postgres) {}
 }
 
 sealed abstract class HttpApi[F[_]: Monad: Async](
-  postgres: transactor.Transactor[F]
+  postgres: Transactor[F]
 ) {
   private val authorRoutes: HttpRoutes[F] = AuthorRoutes[F](postgres).httpRoutes
   private val bookRoutes: HttpRoutes[F] = BookRoutes[F](postgres).httpRoutes
 
-  val routes = authorRoutes <+> bookRoutes
+  val routes: HttpRoutes[F] = authorRoutes <+> bookRoutes
+
 }

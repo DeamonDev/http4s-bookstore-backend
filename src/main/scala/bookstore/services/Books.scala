@@ -18,7 +18,7 @@ trait Books[F[_]] {
   def findByAuthorId(authorId: Long): F[List[Book]]
   def findAllBooks(): F[List[Book]]
   def findNBooks(limit: Int): F[List[Book]]
-  def create(title: String, isbn: String, authorId: Long): F[Int]
+  def create(title: String, isbn: String, authorId: Long, quantity: Int, price: Double): F[Int]
 }
 
 object Books {
@@ -41,10 +41,10 @@ object Books {
       override def findByAuthorId(authorId: Long): F[List[Book]] = 
         findByAuthorIdQuery(authorId).to[List].transact(postgres)
 
-      override def create(title: String, isbn: String, authorId: Long): F[Int] =
+      override def create(title: String, isbn: String, authorId: Long, quantity: Int, price: Double): F[Int] =
         for {
           currentIndex <- getCurrentIndex()
-          b            <-  createBook(currentIndex + 1, title, isbn, authorId).run.transact(postgres)
+          b            <-  createBook(currentIndex + 1, title, isbn, authorId, quantity, price).run.transact(postgres)
         } yield b
     })
 }
@@ -61,17 +61,17 @@ private object BooksSql {
     sql"SELECT * FROM books LIMIT $limit".query[Book]
 
   def selectBook(title: String, isbn: String) = 
-    sql"""SELECT book_id, title, isbn, author_id FROM books
+    sql"""SELECT book_id, title, isbn, author_id, quantity, price FROM books
        WHERE title = $title AND isbn = $isbn""".query[Book]
 
   def findByAuthorIdQuery(authorId: Long) = 
-    sql"""SELECT book_id, title, isbn, author_id 
+    sql"""SELECT book_id, title, isbn, author_id, quantity, price 
           FROM books b
           WHERE b.author_id = $authorId""".query[Book]
 
-  def createBook(currentIndex: Int, title: String, isbn: String, authorId: Long) = 
-    sql"""INSERT INTO books (book_id, title, isbn, author_id) 
-          VALUES ($currentIndex, $title, $isbn, $authorId)""".update
+  def createBook(currentIndex: Int, title: String, isbn: String, authorId: Long, quantity: Int, price: Double) = 
+    sql"""INSERT INTO books (book_id, title, isbn, author_id, quantity, price) 
+          VALUES ($currentIndex, $title, $isbn, $authorId, $quantity, $price)""".update
       
 
 }

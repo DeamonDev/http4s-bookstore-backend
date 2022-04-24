@@ -15,10 +15,10 @@ import bookstore.domain.users._
 final case class AuthorizationRoutes[F[_]: Monad: Async](auth: Auth[F])
   extends Http4sDsl[F] {
 
-    val authedRoutes: AuthedRoutes[User, F] = 
+    val authedRoutes: AuthedRoutes[User, F] =
       AuthedRoutes.of { 
-        case GET -> Root / "index" as user => 
-          Ok(s"Welcome, ${user.firstName}")
+        case GET -> Root / "index" as user =>
+          Ok(s"Welcome, ${user.firstName}. It's nice to see you here!")
       }
 
     val authedHttpRoutes: HttpRoutes[F] = auth.authRoutes(authedRoutes) 
