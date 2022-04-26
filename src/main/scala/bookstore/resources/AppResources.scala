@@ -9,7 +9,7 @@ import doobie.util.transactor._
 sealed abstract class AppResources[F[_]] {
   def getPostgresTransactor(): F[Transactor[F]]
   // TODO add redis resource
-  def getRedisCommands(): Resource[F, RedisCommands[F, String, String]]
+  def getRedisCommands(): F[Resource[F, RedisCommands[F, String, String]]]
 }
 
 object AppResources {
@@ -29,7 +29,7 @@ object AppResources {
             )
           )
         override def getRedisCommands()
-            : Resource[F, RedisCommands[F, String, String]] = ???
+            : F[Resource[F, RedisCommands[F, String, String]]] = ???
       }
     )
 }
