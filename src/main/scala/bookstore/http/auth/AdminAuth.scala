@@ -4,7 +4,7 @@ import cats.Monad
 import cats.effect.kernel.Async
 import doobie.util.transactor._
 import org.http4s.Request
-import bookstore.domain.users._
+import bookstore.domain.admins
 import cats.data.Kleisli
 import org.http4s.Response
 
@@ -43,10 +43,7 @@ import org.http4s.circe.CirceEntityDecoder._
 import org.http4s.circe.CirceEntityEncoder._
 
 import org.http4s.dsl.Http4sDsl
-import bookstore.services.Users
-import bookstore.domain.admins
 import bookstore.services.Admins
-import org.http4s.Http4s
 
 
 
@@ -55,6 +52,9 @@ sealed abstract class AdminAuth[F[_]: Monad: Async](
     def authAdminCookie(): Kleisli[F, Request[F], Either[String, admins.Admin]]
     def onFailure(): AuthedRoutes[String, F]
     def adminMiddleware(routes: AuthedRoutes[admins.Admin, F]): HttpRoutes[F]
+
+    def verifyLogin(req: Request[F]): F[Either[String, admins.Admin]]
+    def login(): Kleisli[F, Request[F], Response[F]]
   }
 
 object AdminAuth { 
@@ -66,14 +66,13 @@ object AdminAuth {
       val key = PrivateKey(Codec.toUTF8(Random.alphanumeric.take(20).mkString("")))
       val crypto = CryptoBits(key)
       val clock = java.time.Clock.systemUTC
-
       override def authAdminCookie(): Kleisli[F, Request[F], Either[String, admins.Admin]] = 
         Kleisli { request => 
           val message = 
             for { 
               header <- request.headers.get[Cookie]
-                                       .toRight("Cookie parsing error")
-              cookie <- header.values.toList.find(_.name == "admincookie")
+                                       .toRight("Cookie parsing error XD")
+              cookie <- header.values.toList.find(_.name == "newcookie")
                                             .toRight("Couldn't find the cookie")
               token  <- crypto.validateSignedToken(cookie.content)
                               .toRight("Cookie invalid")
@@ -90,9 +89,33 @@ object AdminAuth {
       private val retrieveAdmin: Kleisli[F, Long, admins.Admin] = Kleisli( adminId => 
         for { 
           adminsService <- Admins.make[F](postgres)
-          admin         <- adminsService.findByAdminId(adminId)
-        } yield admin.get
+          admin         <- adminsService.findByAdminId(adminId).map(admin => admin.get)
+        } yield admin
       )
+
+      override def verifyLogin(request: Request[F]): F[Either[String,admins.Admin]] = 
+        request.as[admins.AdminLogin].flatMap { adminLogin => 
+          for {
+            adminsService <- Admins.make[F](postgres)
+            adminName      = adminLogin.adminName
+            adminPass      = adminLogin.adminPass
+            // TODO VERIFICATION!!!
+            admin         <- adminsService.findByAdminName(adminName)
+          } yield Right(admin.get)
+        }
+
+      override def login(): Kleisli[F,Request[F],Response[F]] = Kleisli { req =>
+        for {
+          adminO <- verifyLogin(req)
+          response <- adminO match {
+                        case Left(error) => 
+                          Forbidden(error + "XD")
+                        case Right(admin) => 
+                          val message = crypto.signToken(admin.adminId.toString(), clock.millis().toString())
+                          Ok("Logged as admin!").map(_.addCookie(ResponseCookie(name="newcookie", content=message, path=Some("/"))))
+                      }
+        } yield response
+      }
 
       val middleware: AuthMiddleware[F, admins.Admin] = 
         AuthMiddleware(authAdminCookie(), onFailure())

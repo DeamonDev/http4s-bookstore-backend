@@ -28,6 +28,10 @@ import bookstore.http.routes.AuthorizationRoutes
 import bookstore.services.Users
 import doobie.util.transactor
 import bookstore.domain.users
+import bookstore.http.routes.AdminRoutes
+import bookstore.http.auth.AdminAuth
+import bookstore.services.Admins
+import org.http4s.server.Router
 
 object BookStoreApp extends IOApp.Simple {
 
@@ -42,9 +46,12 @@ object BookStoreApp extends IOApp.Simple {
       auth          <- Auth.make[IO](transactor)
       registrationRoutes     = AuthorizationRoutes[IO](auth).httpRoutes
       authedRoutes    = AuthorizationRoutes[IO](auth).authedHttpRoutes
-      usersService <- Users.make[IO](transactor)
+      adminAuth     <- AdminAuth.make[IO](transactor)
+      adminLoginRoutes = AdminRoutes[IO](adminAuth).httpRoutes
+      adminAuthedRoutes = AdminRoutes[IO](adminAuth).authedHttpRoutes
+      routed = Router("/" -> (httpRoutes <+> registrationRoutes <+> authedRoutes), "admin" -> (adminLoginRoutes <+> adminAuthedRoutes))
       _             <- HttpServer.make[IO](appConfig,
-                                           CORS((registrationRoutes <+> httpRoutes <+> authedRoutes).orNotFound)
+                                           CORS((routed).orNotFound)
                                           ).use { _ => IO.never }
     } yield ()
 

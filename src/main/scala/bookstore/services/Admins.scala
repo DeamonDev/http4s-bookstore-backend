@@ -27,7 +27,7 @@ object Admins {
 
 object AdminsSql {
   def findAdminByNameQuery(adminName: String) = 
-    sql"SELECT * FROM admins WHERE admin_name = '$adminName'".query[Admin]
+    sql"SELECT * FROM admins WHERE admin_name = $adminName".query[Admin]
 
   def findByAdminIdQuery(adminId: Long) = 
     sql"SELECT * FROM admins WHERE admin_id = $adminId".query[Admin]

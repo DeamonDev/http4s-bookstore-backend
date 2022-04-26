@@ -60,10 +60,10 @@ object Auth {
     postgres: Transactor[F]
   ): F[Auth[F]] = 
     Async[F].pure(new Auth[F](postgres) {
+
       val key = PrivateKey(Codec.toUTF8(Random.alphanumeric.take(20).mkString("")))
       val crypto = CryptoBits(key)
       val clock = java.time.Clock.systemUTC
-
       override def verifyRegistration(request: Request[F]): F[Either[String, User]] = 
         request.as[UserRegistration].flatMap { userRegistration =>
           for {
@@ -83,11 +83,11 @@ object Auth {
           val message = 
             for {
               header <- request.headers.get[Cookie]
-                                       .toRight("Cookie parsing error")
+                                       .toRight("Cookie parsing error XDD")
               cookie <- header.values.toList.find(_.name == "authcookie")
-                                            .toRight("Couldn't find the cookie")
+                                            .toRight("Couldn't find the cookie PLAIN")
               token  <- crypto.validateSignedToken(cookie.content)
-                              .toRight("Cookie invalid")
+                              .toRight("Cookie invalid PLAIN AUTH")
               msg    <- Either.catchOnly[NumberFormatException](token.toLong)
                               .leftMap(_.toString)
             } yield msg
