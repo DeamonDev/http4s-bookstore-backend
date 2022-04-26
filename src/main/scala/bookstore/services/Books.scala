@@ -2,15 +2,15 @@ package bookstore.services
 
 import bookstore.domain.books._
 import cats.Monad
-import doobie.util.transactor._
 import cats.effect.IO
-import doobie.implicits._
-import cats.implicits._
-import doobie.util.ExecutionContexts
 import cats.effect.kernel.Async
-import fs2.Stream
-import doobie.util.query.Query0
+import cats.implicits._
+import doobie.implicits._
+import doobie.util.ExecutionContexts
 import doobie.util.pos
+import doobie.util.query.Query0
+import doobie.util.transactor._
+import fs2.Stream
 
 trait Books[F[_]] {
   def find(title: String, isbn: String): F[Option[Book]]

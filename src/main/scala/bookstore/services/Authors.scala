@@ -2,14 +2,14 @@ package bookstore.services
 
 import bookstore.domain.authors._
 import cats.Monad
-import doobie.util.transactor._
 import cats.effect.IO
-import doobie.implicits._
-import cats.implicits._
-import doobie.util.ExecutionContexts
 import cats.effect.kernel.Async
-import fs2.Stream
+import cats.implicits._
+import doobie.implicits._
+import doobie.util.ExecutionContexts
 import doobie.util.query.Query0
+import doobie.util.transactor._
+import fs2.Stream
 
 trait Authors[F[_]] {
   def find(firstName: String, lastName: String): F[Option[Author]]

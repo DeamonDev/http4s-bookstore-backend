@@ -1,49 +1,43 @@
 package bookstore.http.auth
 
-import cats.Monad
-import cats.effect.kernel.Async
-import doobie.util.transactor._
-import org.http4s.Request
 import bookstore.domain.users._
-import cats.data.Kleisli
-import org.http4s.Response
-
-import cats.effect._
-import cats.syntax.all._
-import org.http4s.dsl.io._
-import com.comcast.ip4s._
-import org.http4s.HttpRoutes
-import org.http4s.implicits._
-import org.http4s.ember.server._
-import fs2.compression.ZLibParams
-import org.http4s.Header
-import cats.data.Kleisli
-import org.http4s.Status
-import org.http4s.Request
-import org.http4s.Response
-import cats.data.OptionT
-import org.http4s.server.AuthMiddleware
-import org.http4s.AuthedRoutes
-
-import org.reactormonk.{CryptoBits, PrivateKey}
-import scala.io.Codec
-import scala.util.Random
-import org.http4s.ResponseCookie
-import org.http4s.headers.Cookie
-
-import io.circe.syntax._
-import io.circe.generic.semiauto._
-import org.http4s.implicits._
-import org.http4s.circe._
+import bookstore.services.Users
+import cats.Monad
 import cats.MonadThrow
+import cats.data.Kleisli
+import cats.data.OptionT
+import cats.effect._
+import cats.effect.kernel.Async
+import cats.syntax.all._
+import com.comcast.ip4s._
+import doobie.util.transactor._
+import fs2.compression.ZLibParams
 import io.circe.Decoder
 import io.circe.Encoder
-
+import io.circe.generic.semiauto._
+import io.circe.syntax._
+import org.http4s.AuthedRoutes
+import org.http4s.Header
+import org.http4s.HttpRoutes
+import org.http4s.Request
+import org.http4s.Response
+import org.http4s.ResponseCookie
+import org.http4s.Status
 import org.http4s.circe.CirceEntityDecoder._
 import org.http4s.circe.CirceEntityEncoder._
-
+import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
-import bookstore.services.Users
+import org.http4s.dsl.io._
+import org.http4s.ember.server._
+import org.http4s.headers.Cookie
+import org.http4s.implicits._
+import org.http4s.implicits._
+import org.http4s.server.AuthMiddleware
+import org.reactormonk.CryptoBits
+import org.reactormonk.PrivateKey
+
+import scala.io.Codec
+import scala.util.Random
 
 sealed abstract class Auth[F[_]: Monad: Async](
     postgres: Transactor[F]

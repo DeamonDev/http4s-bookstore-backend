@@ -1,37 +1,36 @@
 package bookstore
 
-import cats.effect.IOApp
-import cats.effect.{ExitCode, IO}
 import bookstore.config.Config
+import bookstore.domain.users
+import bookstore.http.HttpApi
+import bookstore.http.auth.AdminAuth
+import bookstore.http.auth.Auth
+import bookstore.http.routes.AdminRoutes
+import bookstore.http.routes.AuthorizationRoutes
 import bookstore.resources.AppResources
-
+import bookstore.services.Admins
+import bookstore.services.Authors
+import bookstore.services.Books
+import bookstore.services.HttpServer
+import bookstore.services.Users
 import cats._
+import cats.effect.ExitCode
+import cats.effect.IO
+import cats.effect.IOApp
 import cats.effect._
 import cats.implicits._
-
 import doobie._
 import doobie.implicits._
-
-import scala.concurrent.duration._
-import bookstore.services.HttpServer
-import bookstore.services.Authors
-import bookstore.http.HttpApi
-
+import doobie.util.transactor
+import org.http4s.client.middleware
+import org.http4s.implicits._
+import org.http4s.server
+import org.http4s.server.Router
+import org.http4s.server.middleware.CORS
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
-import bookstore.services.Books
 
-import org.http4s.implicits._
-import org.http4s.server.middleware.CORS
-import bookstore.http.auth.Auth
-import bookstore.http.routes.AuthorizationRoutes
-import bookstore.services.Users
-import doobie.util.transactor
-import bookstore.domain.users
-import bookstore.http.routes.AdminRoutes
-import bookstore.http.auth.AdminAuth
-import bookstore.services.Admins
-import org.http4s.server.Router
+import scala.concurrent.duration._
 
 object BookStoreApp extends IOApp.Simple {
 
@@ -53,9 +52,14 @@ object BookStoreApp extends IOApp.Simple {
         "/" -> (httpRoutes <+> registrationRoutes <+> authedRoutes),
         "admin" -> (adminLoginRoutes <+> adminAuthedRoutes)
       )
-      _ <- HttpServer.make[IO](appConfig, CORS((routed).orNotFound)).use { _ =>
-        IO.never
-      }
+      _ <- HttpServer
+        .make[IO](
+          appConfig,
+          CORS(server.middleware.Logger.httpApp(logHeaders=true, logBody=true)(routed.orNotFound))
+        )
+        .use { _ =>
+          IO.never
+        }
     } yield ()
 
   override def run: IO[Unit] =

@@ -1,21 +1,18 @@
 package bookstore.http.routes
 
-import cats.implicits._
-import io.circe.syntax._
-import io.circe.generic.auto._
-import org.http4s._
-
-import org.http4s.dsl.Http4sDsl
-import cats.effect._
-import org.http4s.implicits._
-import cats.Monad
-
-import doobie.util.transactor._
 import bookstore.domain.books._
-
-import org.http4s.circe.CirceEntityCodec._
 import bookstore.services.Authors
 import bookstore.services.Books
+import cats.Monad
+import cats.effect._
+import cats.implicits._
+import doobie.util.transactor._
+import io.circe.generic.auto._
+import io.circe.syntax._
+import org.http4s._
+import org.http4s.circe.CirceEntityCodec._
+import org.http4s.dsl.Http4sDsl
+import org.http4s.implicits._
 
 import QueryParamMatchers._
 

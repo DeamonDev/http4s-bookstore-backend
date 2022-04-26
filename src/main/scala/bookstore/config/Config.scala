@@ -1,12 +1,12 @@
 package bookstore.config
 
-import types._
-
+import cats.effect.kernel.Sync
+import cats.effect.syntax.all._
+import cats.syntax.all._
 import pureconfig._
 import pureconfig.generic.auto._
-import cats.effect.kernel.Sync
-import cats.syntax.all._
-import cats.effect.syntax.all._
+
+import types._
 
 object Config {
   def load[F[_]: Sync]: F[AppConfig] =
@@ -15,7 +15,9 @@ object Config {
       httpConfig <- Sync[F].fromEither(httpConfigEither)
       dbConfigEither <- loadPart[F, DbConfig]
       dbConfig <- Sync[F].fromEither(dbConfigEither)
-    } yield AppConfig(httpConfig, dbConfig)
+      redisConfigEither <- loadPart[F, RedisConfig]
+      redisConfig <- Sync[F].fromEither(redisConfigEither)
+    } yield AppConfig(httpConfig, dbConfig, redisConfig)
 
   private def loadPart[F[_]: Sync, A](implicit reader: ConfigReader[A]) =
     Sync[F].pure(
