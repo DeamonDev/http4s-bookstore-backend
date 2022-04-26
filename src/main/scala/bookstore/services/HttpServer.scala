@@ -36,14 +36,16 @@ import org.http4s.circe.CirceEntityCodec._
 object HttpServer {
 
   private def showEmberBanner[F[_]: Logger](s: Server): F[Unit] =
-    Logger[F].info(s"\n${Banner.mkString("\n")}\nHTTP Server started at ${s.address}")
+    Logger[F].info(
+      s"\n${Banner.mkString("\n")}\nHTTP Server started at ${s.address}"
+    )
 
-  def make[F[_]: Async: Logger](appCfg: AppConfig, routes: HttpApp[F]) = 
+  def make[F[_]: Async: Logger](appCfg: AppConfig, routes: HttpApp[F]) =
     EmberServerBuilder
-    .default[F]
-    .withHost(Host.fromString(appCfg.httpConfig.host).get)
-    .withPort(Port.fromString(appCfg.httpConfig.port).get)
-    .withHttpApp(routes)
-    .build
-    .evalTap(server => showEmberBanner[F](server))
+      .default[F]
+      .withHost(Host.fromString(appCfg.httpConfig.host).get)
+      .withPort(Port.fromString(appCfg.httpConfig.port).get)
+      .withHttpApp(routes)
+      .build
+      .evalTap(server => showEmberBanner[F](server))
 }

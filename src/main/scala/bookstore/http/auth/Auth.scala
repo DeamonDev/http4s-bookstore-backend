@@ -46,8 +46,8 @@ import org.http4s.dsl.Http4sDsl
 import bookstore.services.Users
 
 sealed abstract class Auth[F[_]: Monad: Async](
-  postgres: Transactor[F]
-) extends Http4sDsl[F] { 
+    postgres: Transactor[F]
+) extends Http4sDsl[F] {
   def verifyRegistration(request: Request[F]): F[Either[String, User]]
   def authUserCookie(): Kleisli[F, Request[F], Either[String, User]]
   def register(): Kleisli[F, Request[F], Response[F]]
@@ -57,73 +57,86 @@ sealed abstract class Auth[F[_]: Monad: Async](
 
 object Auth {
   def make[F[_]: Monad: Async](
-    postgres: Transactor[F]
-  ): F[Auth[F]] = 
+      postgres: Transactor[F]
+  ): F[Auth[F]] =
     Async[F].pure(new Auth[F](postgres) {
 
-      val key = PrivateKey(Codec.toUTF8(Random.alphanumeric.take(20).mkString("")))
-      val crypto = CryptoBits(key)
-      val clock = java.time.Clock.systemUTC
-      override def verifyRegistration(request: Request[F]): F[Either[String, User]] = 
+      import crypto.Crypto._
+      override def verifyRegistration(
+          request: Request[F]
+      ): F[Either[String, User]] =
         request.as[UserRegistration].flatMap { userRegistration =>
           for {
             usersService <- Users.make[F](postgres)
-            username      = userRegistration.username
-            password      = userRegistration.password
-            firstName     = userRegistration.firstName
-            lastName      = userRegistration.lastName
-            email         = userRegistration.email
-            verified      = userRegistration.verified
-            u            <- usersService.create(username, password, firstName, lastName, email, verified)
+            username = userRegistration.username
+            password = userRegistration.password
+            firstName = userRegistration.firstName
+            lastName = userRegistration.lastName
+            email = userRegistration.email
+            verified = userRegistration.verified
+            u <- usersService
+              .create(username, password, firstName, lastName, email, verified)
           } yield Right(u)
         }
 
-      override def authUserCookie(): Kleisli[F, Request[F], Either[String, User]] = 
-        Kleisli{ request => 
-          val message = 
+      override def authUserCookie()
+          : Kleisli[F, Request[F], Either[String, User]] =
+        Kleisli { request =>
+          val message =
             for {
-              header <- request.headers.get[Cookie]
-                                       .toRight("Cookie parsing error XDD")
-              cookie <- header.values.toList.find(_.name == "authcookie")
-                                            .toRight("Couldn't find the cookie PLAIN")
-              token  <- crypto.validateSignedToken(cookie.content)
-                              .toRight("Cookie invalid PLAIN AUTH")
-              msg    <- Either.catchOnly[NumberFormatException](token.toLong)
-                              .leftMap(_.toString)
+              header <- request.headers
+                .get[Cookie]
+                .toRight("Cookie parsing error XDD")
+              cookie <- header.values.toList
+                .find(_.name == "authcookie")
+                .toRight("Couldn't find the cookie PLAIN")
+              token <- crypto
+                .validateSignedToken(cookie.content)
+                .toRight("Cookie invalid PLAIN AUTH")
+              msg <- Either
+                .catchOnly[NumberFormatException](token.toLong)
+                .leftMap(_.toString)
             } yield msg
 
-            message.traverse(retrieveUser.run)
-          }
-                              
-      override def register(): Kleisli[F, Request[F], Response[F]] = Kleisli(request =>
-        for {
-          user <- verifyRegistration(request)
-          response <- user match {
-                        case Left(error) => 
-                          Forbidden(error)
-                        case Right(registeredUser) =>
-                          val message = crypto.signToken(registeredUser.userId.toString(), clock.millis().toString())
-                          Ok("Registered!").map(_.addCookie(ResponseCookie("authcookie", message)))
-                      }
-        } yield response
-      )
-        
+          message.traverse(retrieveUser.run)
+        }
 
-      override def onFailure(): AuthedRoutes[String, F] = Kleisli( req =>
-        OptionT.liftF(Forbidden(req.context)))
+      override def register(): Kleisli[F, Request[F], Response[F]] =
+        Kleisli(request =>
+          for {
+            user <- verifyRegistration(request)
+            response <- user match {
+              case Left(error) =>
+                Forbidden(error)
+              case Right(registeredUser) =>
+                val message = crypto.signToken(
+                  registeredUser.userId.toString(),
+                  clock.millis().toString()
+                )
+                Ok("Registered!").map(
+                  _.addCookie(ResponseCookie("authcookie", message))
+                )
+            }
+          } yield response
+        )
 
-      private val retrieveUser: Kleisli[F, Long, User] = Kleisli( userId => 
+      override def onFailure(): AuthedRoutes[String, F] =
+        Kleisli(req => OptionT.liftF(Forbidden(req.context)))
+
+      private val retrieveUser: Kleisli[F, Long, User] = Kleisli(userId =>
         for {
           usersService <- Users.make[F](postgres)
-          user         <- usersService.findUserById(userId).map(user => user.get)
+          user <- usersService.findUserById(userId).map(user => user.get)
         } yield user
       )
 
-      val middleware: AuthMiddleware[F, User] = 
-       AuthMiddleware(authUserCookie(), onFailure())
+      val middleware: AuthMiddleware[F, User] =
+        AuthMiddleware(authUserCookie(), onFailure())
 
-      override def authRoutes(authedRoutes: AuthedRoutes[User,F]): HttpRoutes[F] = 
-         middleware(authedRoutes)
+      override def authRoutes(
+          authedRoutes: AuthedRoutes[User, F]
+      ): HttpRoutes[F] =
+        middleware(authedRoutes)
 
     })
 }

@@ -39,23 +39,25 @@ object BookStoreApp extends IOApp.Simple {
 
   val forProgram =
     for {
-      appConfig     <- Config.load[IO]
-      appResources  <- AppResources.make[IO](appConfig)
-      transactor    <- appResources.getPostgresTransactor()
-      httpRoutes     = HttpApi.make[IO](transactor).routes
-      auth          <- Auth.make[IO](transactor)
-      registrationRoutes     = AuthorizationRoutes[IO](auth).httpRoutes
-      authedRoutes    = AuthorizationRoutes[IO](auth).authedHttpRoutes
-      adminAuth     <- AdminAuth.make[IO](transactor)
+      appConfig <- Config.load[IO]
+      appResources <- AppResources.make[IO](appConfig)
+      transactor <- appResources.getPostgresTransactor()
+      httpRoutes = HttpApi.make[IO](transactor).routes
+      auth <- Auth.make[IO](transactor)
+      registrationRoutes = AuthorizationRoutes[IO](auth).httpRoutes
+      authedRoutes = AuthorizationRoutes[IO](auth).authedHttpRoutes
+      adminAuth <- AdminAuth.make[IO](transactor)
       adminLoginRoutes = AdminRoutes[IO](adminAuth).httpRoutes
       adminAuthedRoutes = AdminRoutes[IO](adminAuth).authedHttpRoutes
-      routed = Router("/" -> (httpRoutes <+> registrationRoutes <+> authedRoutes), "admin" -> (adminLoginRoutes <+> adminAuthedRoutes))
-      _             <- HttpServer.make[IO](appConfig,
-                                           CORS((routed).orNotFound)
-                                          ).use { _ => IO.never }
+      routed = Router(
+        "/" -> (httpRoutes <+> registrationRoutes <+> authedRoutes),
+        "admin" -> (adminLoginRoutes <+> adminAuthedRoutes)
+      )
+      _ <- HttpServer.make[IO](appConfig, CORS((routed).orNotFound)).use { _ =>
+        IO.never
+      }
     } yield ()
 
   override def run: IO[Unit] =
     forProgram
 }
-

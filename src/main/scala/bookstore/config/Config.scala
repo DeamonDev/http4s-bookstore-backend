@@ -9,19 +9,22 @@ import cats.syntax.all._
 import cats.effect.syntax.all._
 
 object Config {
-  def load[F[_]: Sync]: F[AppConfig] = 
+  def load[F[_]: Sync]: F[AppConfig] =
     for {
-      httpConfigEither   <- loadPart[F, HttpConfig]
-      httpConfig         <- Sync[F].fromEither(httpConfigEither)
-      dbConfigEither     <- loadPart[F, DbConfig]
-      dbConfig           <- Sync[F].fromEither(dbConfigEither)
+      httpConfigEither <- loadPart[F, HttpConfig]
+      httpConfig <- Sync[F].fromEither(httpConfigEither)
+      dbConfigEither <- loadPart[F, DbConfig]
+      dbConfig <- Sync[F].fromEither(dbConfigEither)
     } yield AppConfig(httpConfig, dbConfig)
 
-  private def loadPart[F[_]: Sync, A](implicit reader: ConfigReader[A]) = 
+  private def loadPart[F[_]: Sync, A](implicit reader: ConfigReader[A]) =
     Sync[F].pure(
       ConfigSource.default
-                  .load[A]
-                  .fold(configReaderFailures => Left(new Throwable(configReaderFailures.toString())),
-                        Right(_))
+        .load[A]
+        .fold(
+          configReaderFailures =>
+            Left(new Throwable(configReaderFailures.toString())),
+          Right(_)
+        )
     )
 }
