@@ -29,8 +29,9 @@ import org.http4s.server.Router
 import org.http4s.server.middleware.CORS
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
-
+import dev.profunktor.redis4cats.effect.MkRedis
 import scala.concurrent.duration._
+import dev.profunktor.redis4cats.log4cats._
 
 object BookStoreApp extends IOApp.Simple {
 

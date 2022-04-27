@@ -48,6 +48,7 @@ object Dependencies {
   )
 
   lazy val redis = Seq(
-   "dev.profunktor" %% "redis4cats-effects" % redisVersion
+    "dev.profunktor" %% "redis4cats-effects" % redisVersion,
+    "dev.profunktor" %% "redis4cats-log4cats" % redisVersion
   )
 }
