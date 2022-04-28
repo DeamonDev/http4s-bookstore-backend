@@ -19,6 +19,8 @@ import cats.effect.IO
 import cats.effect.IOApp
 import cats.effect._
 import cats.implicits._
+import dev.profunktor.redis4cats.effect.MkRedis
+import dev.profunktor.redis4cats.log4cats._
 import doobie._
 import doobie.implicits._
 import doobie.util.transactor
@@ -29,9 +31,9 @@ import org.http4s.server.Router
 import org.http4s.server.middleware.CORS
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
-import dev.profunktor.redis4cats.effect.MkRedis
+
 import scala.concurrent.duration._
-import dev.profunktor.redis4cats.log4cats._
+import bookstore.http.AuthedHttpApi
 
 object BookStoreApp extends IOApp.Simple {
 
@@ -42,6 +44,10 @@ object BookStoreApp extends IOApp.Simple {
       appConfig <- Config.load[IO]
       appResources <- AppResources.make[IO](appConfig)
       transactor <- appResources.getPostgresTransactor()
+      redisCommandsR <- appResources.getRedisCommands()
+      _ <- redisCommandsR.use { redisCommands =>
+        redisCommands.set("book_store_app", "ON")
+      }
       httpRoutes = HttpApi.make[IO](transactor).routes
       auth <- Auth.make[IO](transactor)
       registrationRoutes = AuthorizationRoutes[IO](auth).httpRoutes
@@ -49,14 +55,18 @@ object BookStoreApp extends IOApp.Simple {
       adminAuth <- AdminAuth.make[IO](transactor)
       adminLoginRoutes = AdminRoutes[IO](adminAuth).httpRoutes
       adminAuthedRoutes = AdminRoutes[IO](adminAuth).authedHttpRoutes
+      userRoutes = AuthedHttpApi.make[IO](auth, adminAuth).userRoutes
+      adminRoutes = AuthedHttpApi.make[IO](auth, adminAuth).adminRoutes
       routed = Router(
-        "/" -> (httpRoutes <+> registrationRoutes <+> authedRoutes),
-        "admin" -> (adminLoginRoutes <+> adminAuthedRoutes)
-      )
+        "/" -> (httpRoutes <+> userRoutes),
+        "admin" -> adminRoutes)
       _ <- HttpServer
         .make[IO](
           appConfig,
-          CORS(server.middleware.Logger.httpApp(logHeaders=true, logBody=true)(routed.orNotFound))
+          CORS(
+            server.middleware.Logger
+              .httpApp(logHeaders = true, logBody = true)(routed.orNotFound)
+          )
         )
         .use { _ =>
           IO.never

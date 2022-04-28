@@ -3,14 +3,14 @@ package bookstore.resources
 import bookstore.config.types._
 import cats.effect.kernel.Async
 import cats.effect.kernel.Resource
-import dev.profunktor.redis4cats.RedisCommands
-import doobie.util.transactor._
 import dev.profunktor.redis4cats.Redis
-import org.log4s
+import dev.profunktor.redis4cats.RedisCommands
 import dev.profunktor.redis4cats.effect.MkRedis
+import doobie.util.transactor._
+import org.log4s
 
 sealed abstract class AppResources[F[_]] {
-  // TODO it would be better to have F[Resource[F, Transactor[F]]]
+
   def getPostgresTransactor(): F[Transactor[F]]
   def getRedisCommands(): F[Resource[F, RedisCommands[F, String, String]]]
 }
