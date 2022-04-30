@@ -13,15 +13,14 @@ import org.http4s.circe.CirceEntityCodec._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.implicits._
 
-final case class AuthorRoutes[F[_]: Monad: Async](postgres: Transactor[F])
+final case class AuthorRoutes[F[_]: Monad: Async](authorsService: Authors[F])
     extends Http4sDsl[F] {
   val httpRoutes: HttpRoutes[F] = HttpRoutes.of[F] {
     case GET -> Root / "welcome" / name =>
       Ok(s"Welcome, $name")
     case GET -> Root / "author" / firstName / lastName =>
       for {
-        authorService <- Authors.make[F](postgres)
-        authorOption <- authorService.find(firstName, lastName)
+        authorOption <- authorsService.find(firstName, lastName)
         author = authorOption match {
           case Some(author) => author
           case None         => Author(-1, "X", "Y")

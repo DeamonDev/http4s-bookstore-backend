@@ -48,13 +48,11 @@ object BookStoreApp extends IOApp.Simple {
       _ <- redisCommandsR.use { redisCommands =>
         redisCommands.set("book_store_app", "ON")
       }
-      httpRoutes = HttpApi.make[IO](transactor).routes
+      booksService <- Books.make[IO](transactor)
+      authorsService <- Authors.make[IO](transactor)
+      httpRoutes = HttpApi.make[IO](transactor, authorsService, booksService).routes
       auth <- Auth.make[IO](transactor)
-      registrationRoutes = AuthorizationRoutes[IO](auth).httpRoutes
-      authedRoutes = AuthorizationRoutes[IO](auth).authedHttpRoutes
       adminAuth <- AdminAuth.make[IO](transactor)
-      adminLoginRoutes = AdminRoutes[IO](adminAuth).httpRoutes
-      adminAuthedRoutes = AdminRoutes[IO](adminAuth).authedHttpRoutes
       userRoutes = AuthedHttpApi.make[IO](auth, adminAuth).userRoutes
       adminRoutes = AuthedHttpApi.make[IO](auth, adminAuth).adminRoutes
       routed = Router(

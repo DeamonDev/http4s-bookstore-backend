@@ -6,6 +6,7 @@ object Dependencies {
     val http4sVersion: String = "1.0.0-M23"
     val doobieVersion: String = "1.0.0-RC1"
     val redisVersion: String = "1.1.1"
+    val weaverVersion: String = "0.7.1"
   }
 
   lazy val scalaTest = "org.scalatest" %% "scalatest" % "3.2.11"
@@ -50,5 +51,11 @@ object Dependencies {
   lazy val redis = Seq(
     "dev.profunktor" %% "redis4cats-effects" % redisVersion,
     "dev.profunktor" %% "redis4cats-log4cats" % redisVersion
+  )
+
+  lazy val weaverTest = Seq(
+    "com.disneystreaming" %% "weaver-cats" % weaverVersion % Test,
+    "com.disneystreaming" %% "weaver-scalacheck" % weaverVersion % Test
+
   )
 }

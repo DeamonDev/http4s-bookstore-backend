@@ -1,8 +1,8 @@
 import Dependencies._
 
-ThisBuild / scalaVersion     := "2.13.8"
-ThisBuild / version          := "0.1.0-SNAPSHOT"
-ThisBuild / organization     := "com.example"
+ThisBuild / scalaVersion := "2.13.8"
+ThisBuild / version := "0.1.0-SNAPSHOT"
+ThisBuild / organization := "com.example"
 ThisBuild / organizationName := "example"
 
 lazy val root = (project in file("."))
@@ -10,8 +10,8 @@ lazy val root = (project in file("."))
     name := "book-store",
     libraryDependencies += scalaTest % Test,
     libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.3",
-    libraryDependencies ++= http4s ++ pureConfig ++ doobie ++ circe ++ log4Cats ++ cookies ++ redis,
+    libraryDependencies ++= http4s ++ pureConfig ++ doobie ++ circe ++ log4Cats ++ cookies ++ redis ++ weaverTest,
+    testFrameworks += new TestFramework("weaver.framework.CatsEffect")
   )
-
 
 // See https://www.scala-sbt.org/1.x/docs/Using-Sonatype.html for instructions on how to publish to Sonatype.
