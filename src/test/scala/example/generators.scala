@@ -2,6 +2,7 @@ package example
 
 import bookstore.domain.books._
 import org.scalacheck.Gen
+import org.scalacheck.Arbitrary.arbitrary
 
 object generators {
 

@@ -11,9 +11,9 @@ import org.http4s.circe._
 import weaver.scalacheck.Checkers
 import weaver.{Expectations, SimpleIOSuite}
 
-object HttpSuite extends SimpleIOSuite with Checkers {
+trait HttpSuite extends SimpleIOSuite with Checkers {
 
-  case object DummyError extends NoStackTrace
+case object DummyError extends NoStackTrace
 
   def expectHttpBodyAndStatus[A: Encoder](
       routes: HttpRoutes[IO],
@@ -25,6 +25,7 @@ object HttpSuite extends SimpleIOSuite with Checkers {
     routes.run(req).value.flatMap {
       case Some(resp) =>
         resp.asJson.map { json =>
+          //expectations form a commutative monoid
           expect.same(resp.status, expectedStatus) |+| expect
             .same(json.dropNullValues, expectedBody.asJson.dropNullValues)
         }

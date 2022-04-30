@@ -2,6 +2,7 @@ package bookstore
 
 import bookstore.config.Config
 import bookstore.domain.users
+import bookstore.http.AuthedHttpApi
 import bookstore.http.HttpApi
 import bookstore.http.auth.AdminAuth
 import bookstore.http.auth.Auth
@@ -33,7 +34,6 @@ import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 import scala.concurrent.duration._
-import bookstore.http.AuthedHttpApi
 
 object BookStoreApp extends IOApp.Simple {
 
@@ -50,14 +50,17 @@ object BookStoreApp extends IOApp.Simple {
       }
       booksService <- Books.make[IO](transactor)
       authorsService <- Authors.make[IO](transactor)
-      httpRoutes = HttpApi.make[IO](transactor, authorsService, booksService).routes
+      httpRoutes = HttpApi
+        .make[IO](transactor, authorsService, booksService)
+        .routes
       auth <- Auth.make[IO](transactor)
       adminAuth <- AdminAuth.make[IO](transactor)
       userRoutes = AuthedHttpApi.make[IO](auth, adminAuth).userRoutes
       adminRoutes = AuthedHttpApi.make[IO](auth, adminAuth).adminRoutes
       routed = Router(
         "/" -> (httpRoutes <+> userRoutes),
-        "admin" -> adminRoutes)
+        "admin" -> adminRoutes
+      )
       _ <- HttpServer
         .make[IO](
           appConfig,
