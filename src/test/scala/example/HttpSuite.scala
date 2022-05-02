@@ -3,6 +3,8 @@ package example
 import scala.util.control.NoStackTrace
 
 import cats.effect.IO
+import cats._
+import cats.implicits._
 import cats.implicits._
 import io.circe._
 import io.circe.syntax._

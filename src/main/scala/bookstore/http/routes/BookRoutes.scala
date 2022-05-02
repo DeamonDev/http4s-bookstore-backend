@@ -26,12 +26,6 @@ final case class BookRoutes[F[_]: Monad: Async](booksService: Books[F])
         response <- Ok(books.asJson)
       } yield response
 
-    case GET -> Root / "book" =>
-      for {
-        allBooks <- booksService.findAllBooks()
-        response <- Ok(allBooks.asJson)
-      } yield response
-
     case GET -> Root / "book" :? AuthorQueryParamMatcher(authorId) =>
       for {
         listOfBooks <- booksService.findByAuthorId(authorId)
@@ -39,6 +33,12 @@ final case class BookRoutes[F[_]: Monad: Async](booksService: Books[F])
           case 0 => NotFound()
           case _ => Ok(listOfBooks.asJson)
         }
+      } yield response
+
+    case GET -> Root / "book" =>
+      for {
+        allBooks <- booksService.findAllBooks()
+        response <- Ok(allBooks.asJson)
       } yield response
 
     case GET -> Root / "book" / title / isbn =>
@@ -49,5 +49,11 @@ final case class BookRoutes[F[_]: Monad: Async](booksService: Books[F])
           case None       => NotFound()
         }
       } yield response
+
+    case req @ POST -> Root / "book" =>
+      for {
+        newBook <- req.as[Book]
+        r = Response[F](status = Status.Created)
+      } yield r
   }
 }

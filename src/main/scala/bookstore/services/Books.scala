@@ -23,7 +23,7 @@ trait Books[F[_]] {
       authorId: Long,
       quantity: Int,
       price: Double
-  ): F[Int]
+  ): F[Books[F]]
 }
 
 object Books {
@@ -52,7 +52,7 @@ object Books {
           authorId: Long,
           quantity: Int,
           price: Double
-      ): F[Int] =
+      ): F[Books[F]] =
         for {
           currentIndex <- getCurrentIndex()
           b <- createBook(
@@ -63,7 +63,7 @@ object Books {
             quantity,
             price
           ).run.transact(postgres)
-        } yield b
+        } yield this
     })
 }
 
@@ -83,7 +83,7 @@ private object BooksSql {
        WHERE title = $title AND isbn = $isbn""".query[Book]
 
   def findByAuthorIdQuery(authorId: Long) =
-    sql"""SELECT book_id, title, isbn, author_id, quantity, price 
+    sql"""SELECT book_id, title, isbn, author_id
           FROM books b
           WHERE b.author_id = $authorId""".query[Book]
 

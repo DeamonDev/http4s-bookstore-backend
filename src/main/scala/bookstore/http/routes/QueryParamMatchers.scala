@@ -5,6 +5,6 @@ import org.http4s.dsl.impl.QueryParamDecoderMatcher
 object QueryParamMatchers {
 
   object AuthorQueryParamMatcher
-      extends QueryParamDecoderMatcher[Int]("author_id")
+      extends QueryParamDecoderMatcher[Long]("author_id")
   object LimitQueryParamMatcher extends QueryParamDecoderMatcher[Int]("limit")
 }
