@@ -15,7 +15,10 @@ class TestBooks(books: List[Book]) extends Books[IO] {
   override def findByAuthorId(authorId: Long): IO[List[Book]] =
     IO.pure(books.filter(_.authorId == authorId))
   override def findAllBooks(): IO[List[Book]] = IO.pure(books)
-  override def findNBooks(limit: Int): IO[List[Book]] = IO.pure(books.take(limit))
+  override def findNBooks(limit: Int): IO[List[Book]] =
+    IO.pure(books.take(limit))
+
+  override def checkIfBookExist(book: Book): IO[Boolean] = IO.pure(books.contains(book))
 
   override def create(
       title: String,
@@ -23,7 +26,9 @@ class TestBooks(books: List[Book]) extends Books[IO] {
       authorId: Long,
       quantity: Int,
       price: Double
-  ): IO[TestBooks] = IO.pure(TestBooks.make(books :+ Book(books.length + 1, title, isbn, authorId)))
+  ): IO[TestBooks] = IO.pure(
+    TestBooks.make(books :+ Book(books.length + 1, title, isbn, authorId))
+  )
 }
 
 object TestBooks {

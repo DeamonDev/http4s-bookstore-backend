@@ -39,7 +39,9 @@ object BookRoutesSuite extends HttpSuite {
     forall(bookGen) { book =>
       val bookTitle = book.title
       val bookIsbn = book.isbn
-      val req = GET(Uri.fromString(s"/book/$bookTitle/$bookIsbn").getOrElse(uri"/index"))
+      val req = GET(
+        Uri.fromString(s"/book/$bookTitle/$bookIsbn").getOrElse(uri"/index")
+      )
       val routes = BookRoutes[IO](TestBooks.make(List(book))).httpRoutes
       expectHttpBodyAndStatus(routes, req)(book, Status.Ok)
     }
@@ -48,7 +50,8 @@ object BookRoutesSuite extends HttpSuite {
   test("Get book with optional author id parameter [GET]") {
     forall(bookGen) { book =>
       val authorId = book.authorId
-      val req = GET(Uri.fromString(s"/book?author_id=$authorId").getOrElse(uri"/index"))
+      val req =
+        GET(Uri.fromString(s"/book?author_id=$authorId").getOrElse(uri"/index"))
       val routes = BookRoutes[IO](TestBooks.make(List(book))).httpRoutes
       expectHttpBodyAndStatus(routes, req)(List(book), Status.Ok)
     }
@@ -63,7 +66,7 @@ object BookRoutesSuite extends HttpSuite {
     }
   }
 
-  test("X [POST]") {
+  test("[POST] Add new book to book repository if it doesn't exist.") {
     forall(bookGen) { book =>
       forall(Gen.listOf(bookGen)) { oldBooks =>
         val req = POST(book.asJson, uri"/book")
@@ -72,14 +75,14 @@ object BookRoutesSuite extends HttpSuite {
       }
     }
   }
+
+  test("[POST] Reject while trying to add book which already exists.") {
+    forall(bookGen) { book =>
+      forall(Gen.listOf(bookGen)) { oldBooks =>
+        val req = POST(book.asJson, uri"/book")
+        val routes = BookRoutes[IO](TestBooks.make(oldBooks :+ book)).httpRoutes
+        expectHttpStatus(routes, req)(Status.NotModified)
+      }
+    }
+  }
 }
-
-
-
-
-
-
-
-
-
-

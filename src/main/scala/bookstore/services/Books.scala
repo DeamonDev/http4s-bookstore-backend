@@ -17,6 +17,7 @@ trait Books[F[_]] {
   def findByAuthorId(authorId: Long): F[List[Book]]
   def findAllBooks(): F[List[Book]]
   def findNBooks(limit: Int): F[List[Book]]
+  def checkIfBookExist(book: Book): F[Boolean]
   def create(
       title: String,
       isbn: String,
@@ -45,6 +46,9 @@ object Books {
 
       override def findByAuthorId(authorId: Long): F[List[Book]] =
         findByAuthorIdQuery(authorId).to[List].transact(postgres)
+
+      override def checkIfBookExist(book: Book): F[Boolean] =
+        checkIfBookExistQuery(book).unique.transact(postgres)
 
       override def create(
           title: String,
@@ -86,6 +90,10 @@ private object BooksSql {
     sql"""SELECT book_id, title, isbn, author_id
           FROM books b
           WHERE b.author_id = $authorId""".query[Book]
+
+  def checkIfBookExistQuery(book: Book) =
+    sql"SELECT exists(SELECT 1 FROM books WHERE authorId=${book.authorId} AND title=${book.title})"
+      .query[Boolean]
 
   def createBook(
       currentIndex: Int,

@@ -53,7 +53,10 @@ final case class BookRoutes[F[_]: Monad: Async](booksService: Books[F])
     case req @ POST -> Root / "book" =>
       for {
         newBook <- req.as[Book]
-        r = Response[F](status = Status.Created)
-      } yield r
+        exists <- booksService.checkIfBookExist(newBook)
+        response =
+          if (!exists) Response[F](status = Status.Created)
+          else Response[F](status = Status.NotModified)
+      } yield response
   }
 }
