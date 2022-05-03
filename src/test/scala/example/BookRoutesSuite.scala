@@ -12,8 +12,8 @@ import cats.syntax.show._
 import example.HttpSuite
 import io.circe.Decoder
 import io.circe._
-import io.circe.syntax._
 import io.circe.generic.semiauto._
+import io.circe.syntax._
 import org.http4s.Method._
 import org.http4s._
 import org.http4s.circe._

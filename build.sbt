@@ -10,8 +10,18 @@ lazy val root = (project in file("."))
     name := "book-store",
     libraryDependencies += scalaTest % Test,
     libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.3",
-    libraryDependencies ++= http4s ++ pureConfig ++ doobie ++ circe ++ log4Cats ++ cookies ++ redis ++ weaverTest,
-    testFrameworks += new TestFramework("weaver.framework.CatsEffect")
+    libraryDependencies ++= http4s ++
+      pureConfig ++
+      doobie ++
+      circe ++
+      log4Cats ++
+      cookies ++
+      redis ++
+      weaverTest ++
+      newType ++
+      jwtAuth,
+    testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
+    scalacOptions ++= List("-Ymacro-annotations", "-Yrangepos", "-Wconf:cat=unused:info")
   )
 
 // See https://www.scala-sbt.org/1.x/docs/Using-Sonatype.html for instructions on how to publish to Sonatype.
