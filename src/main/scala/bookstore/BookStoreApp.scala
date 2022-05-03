@@ -34,13 +34,27 @@ import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 import scala.concurrent.duration._
+import bookstore.http.auth.jwt.JwtExpire
+import bookstore.http.auth.jwt.Tokens
+import bookstore.domain.tokens._
+import dev.profunktor.auth.jwt._
 
 object BookStoreApp extends IOApp.Simple {
 
   implicit val logger = Slf4jLogger.getLogger[IO]
 
+  val getJwtTokenForFun: IO[JwtToken] =
+    for {
+      jwte <- JwtExpire.make[IO]
+      config = JwtAccessTokenKeyConfig("secretkey")
+      exp = TokenExpiration(20.days)
+      token <- Tokens.make[IO](jwte, config, exp).create
+    } yield token
+
   val forProgram =
     for {
+      jwtToken <- getJwtTokenForFun
+      _ <- IO.println("jwt: " + jwtToken.value)
       appConfig <- Config.load[IO]
       appResources <- AppResources.make[IO](appConfig)
       transactor <- appResources.getPostgresTransactor()
