@@ -27,5 +27,4 @@ final case class AuthorizationRoutes[F[_]: Monad: Async](auth: Auth[F])
     case req @ POST -> Root / "login" =>
       ???
   }
-
 }

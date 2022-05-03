@@ -38,6 +38,7 @@ import bookstore.http.auth.jwt.JwtExpire
 import bookstore.http.auth.jwt.Tokens
 import bookstore.domain.tokens._
 import dev.profunktor.auth.jwt._
+import bookstore.http.routes.JwtAuthRoutes
 
 object BookStoreApp extends IOApp.Simple {
 
@@ -55,6 +56,7 @@ object BookStoreApp extends IOApp.Simple {
     for {
       jwtToken <- getJwtTokenForFun
       _ <- IO.println("jwt: " + jwtToken.value)
+      jwtRoutes = JwtAuthRoutes[IO]().httpRoutes
       appConfig <- Config.load[IO]
       appResources <- AppResources.make[IO](appConfig)
       transactor <- appResources.getPostgresTransactor()
@@ -73,7 +75,8 @@ object BookStoreApp extends IOApp.Simple {
       adminRoutes = AuthedHttpApi.make[IO](auth, adminAuth).adminRoutes
       routed = Router(
         "/" -> (httpRoutes <+> userRoutes),
-        "admin" -> adminRoutes
+        "admin" -> adminRoutes,
+        "jwt" -> jwtRoutes
       )
       _ <- HttpServer
         .make[IO](
