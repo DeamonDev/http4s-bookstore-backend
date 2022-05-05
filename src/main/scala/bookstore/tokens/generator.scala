@@ -6,6 +6,8 @@ import io.circe.Decoder
 import io.circe.parser.{decode => jsonDecode}
 import io.estatico.newtype.macros._
 import pdi.jwt._
+import io.circe.Encoder
+import io.circe.Json
 
 object TokenGenerator extends IOApp {
   import data._
@@ -44,10 +46,18 @@ object TokenGenerator extends IOApp {
 }
 
 object data {
-  @newtype case class Claim(value: String)
+  case class Claim(userId: String, username: String)
 
   object Claim {
     implicit val jsonDecoder: Decoder[Claim] =
-      Decoder.forProduct1("claim")(Claim.apply)
+      Decoder.forProduct2("user_id", "username")(Claim.apply)
+
+    implicit val jsonEncoder: Encoder[Claim] =
+      new Encoder[Claim] {
+        final def apply(c: Claim) = Json.obj(
+          ("user_id", Json.fromString(c.userId)),
+          ("username", Json.fromString(c.username))
+        )
+      }
   }
 }

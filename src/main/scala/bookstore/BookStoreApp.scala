@@ -39,24 +39,14 @@ import bookstore.http.auth.jwt.Tokens
 import bookstore.domain.tokens._
 import dev.profunktor.auth.jwt._
 import bookstore.http.routes.JwtAuthRoutes
+import bookstore.http.auth.TokenAuth
 
 object BookStoreApp extends IOApp.Simple {
 
   implicit val logger = Slf4jLogger.getLogger[IO]
 
-  val getJwtTokenForFun: IO[JwtToken] =
-    for {
-      jwte <- JwtExpire.make[IO]
-      config = JwtAccessTokenKeyConfig("secretkey")
-      exp = TokenExpiration(20.days)
-      token <- Tokens.make[IO](jwte, config, exp).create
-    } yield token
-
   val forProgram =
     for {
-      jwtToken <- getJwtTokenForFun
-      _ <- IO.println("jwt: " + jwtToken.value)
-      jwtRoutes = JwtAuthRoutes[IO]().httpRoutes
       appConfig <- Config.load[IO]
       appResources <- AppResources.make[IO](appConfig)
       transactor <- appResources.getPostgresTransactor()
@@ -73,10 +63,18 @@ object BookStoreApp extends IOApp.Simple {
       adminAuth <- AdminAuth.make[IO](transactor)
       userRoutes = AuthedHttpApi.make[IO](auth, adminAuth).userRoutes
       adminRoutes = AuthedHttpApi.make[IO](auth, adminAuth).adminRoutes
+      usersService <- Users.make[IO](transactor)
+      jwte <- JwtExpire.make[IO]
+      config = JwtAccessTokenKeyConfig("secretkey")
+      exp = TokenExpiration(20.days)
+      jwtAuth <-
+        TokenAuth.make[IO](usersService, jwte, config, exp)
+      jwtRoutes = JwtAuthRoutes[IO](jwtAuth, usersService, redisCommandsR).httpRoutes
+      jwtAuthedRoutes = JwtAuthRoutes[IO](jwtAuth, usersService, redisCommandsR).authedHttpRoutes
       routed = Router(
         "/" -> (httpRoutes <+> userRoutes),
         "admin" -> adminRoutes,
-        "jwt" -> jwtRoutes
+        "jwt" -> (jwtRoutes <+> jwtAuthedRoutes)
       )
       _ <- HttpServer
         .make[IO](
