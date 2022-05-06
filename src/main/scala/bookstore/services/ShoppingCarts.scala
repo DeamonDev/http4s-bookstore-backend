@@ -8,15 +8,16 @@ import dev.profunktor.redis4cats.RedisCommands
 import dev.profunktor.redis4cats.connection.RedisConnection
 
 trait ShoppingCarts[F[_]] {
-  def create(userId: Long, bookOrders: List[BookOrder] = List.empty[BookOrder])
+  def create(cartId: Long): F[Boolean]
 }
 
 object ShoppingCarts {
   def make[F[_]: Monad: Async](
-      redis: Resource[F, RedisCommands[F, String, String]]
+      redisR: Resource[F, RedisCommands[F, String, String]]
   ): F[ShoppingCarts[F]] =
     Async[F].pure(new ShoppingCarts[F] {
-      override def create(userId: Long, bookOrders: List[BookOrder]): Unit = ???
-
+      override def create(cartId: Long): F[Boolean] = redisR.use { redis =>
+        redis.hSet(cartId.toString(), "dummy", "dummy")
+      }
     })
 }

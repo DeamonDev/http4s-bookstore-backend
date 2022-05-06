@@ -46,17 +46,41 @@ object TokenGenerator extends IOApp {
 }
 
 object data {
-  case class Claim(userId: String, username: String)
+  case class Claim(
+      userId: String,
+      username: String,
+      password: String,
+      firstName: String,
+      lastName: String,
+      email: String,
+      verified: Boolean,
+      shoppingCartId: String
+  )
 
   object Claim {
     implicit val jsonDecoder: Decoder[Claim] =
-      Decoder.forProduct2("user_id", "username")(Claim.apply)
+      Decoder.forProduct8(
+        "user_id",
+        "username",
+        "password",
+        "first_name",
+        "last_name",
+        "email",
+        "verified",
+        "shopping_cart_id"
+      )(Claim.apply)
 
     implicit val jsonEncoder: Encoder[Claim] =
       new Encoder[Claim] {
         final def apply(c: Claim) = Json.obj(
           ("user_id", Json.fromString(c.userId)),
-          ("username", Json.fromString(c.username))
+          ("username", Json.fromString(c.username)),
+          ("password", Json.fromString(c.password)),
+          ("first_name", Json.fromString(c.firstName)),
+          ("last_name", Json.fromString(c.lastName)),
+          ("email", Json.fromString(c.email)),
+          ("verified", Json.fromBoolean(c.verified)),
+          ("shopping_cart_id", Json.fromString(c.shoppingCartId))
         )
       }
   }

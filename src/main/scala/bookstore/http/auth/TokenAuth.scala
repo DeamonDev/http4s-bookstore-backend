@@ -59,7 +59,17 @@ object TokenAuth {
         private val jwtAuth = JwtAuth.hmac(jwtConfig.secret, JwtAlgorithm.HS256)
 
         val claimToUserConverter: data.Claim => Option[User] = claim =>
-          Some(User(claim.userId.toLong, claim.username, "RRR", "XX", "YY", "x2@ww.pl", false))
+          Some(
+            User(
+              claim.userId.toLong,
+              claim.username,
+              claim.password,
+              claim.firstName,
+              claim.lastName,
+              claim.email,
+              claim.verified
+            )
+          )
 
         private val authenticate
             : auth.jwt.JwtToken => JwtClaim => F[Option[User]] =

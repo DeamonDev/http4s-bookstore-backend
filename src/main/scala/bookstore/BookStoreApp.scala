@@ -40,6 +40,7 @@ import bookstore.domain.tokens._
 import dev.profunktor.auth.jwt._
 import bookstore.http.routes.JwtAuthRoutes
 import bookstore.http.auth.TokenAuth
+import bookstore.services.ShoppingCarts
 
 object BookStoreApp extends IOApp.Simple {
 
@@ -54,6 +55,7 @@ object BookStoreApp extends IOApp.Simple {
       _ <- redisCommandsR.use { redisCommands =>
         redisCommands.set("book_store_app", "ON")
       }
+      shoppingCarts <- ShoppingCarts.make[IO](redisCommandsR)
       booksService <- Books.make[IO](transactor)
       authorsService <- Authors.make[IO](transactor)
       httpRoutes = HttpApi
@@ -69,8 +71,8 @@ object BookStoreApp extends IOApp.Simple {
       exp = TokenExpiration(20.days)
       jwtAuth <-
         TokenAuth.make[IO](usersService, jwte, config, exp)
-      jwtRoutes = JwtAuthRoutes[IO](jwtAuth, usersService, redisCommandsR).httpRoutes
-      jwtAuthedRoutes = JwtAuthRoutes[IO](jwtAuth, usersService, redisCommandsR).authedHttpRoutes
+      jwtRoutes = JwtAuthRoutes[IO](jwtAuth, usersService, redisCommandsR, shoppingCarts).httpRoutes
+      jwtAuthedRoutes = JwtAuthRoutes[IO](jwtAuth, usersService, redisCommandsR, shoppingCarts).authedHttpRoutes
       routed = Router(
         "/" -> (httpRoutes <+> userRoutes),
         "admin" -> adminRoutes,
