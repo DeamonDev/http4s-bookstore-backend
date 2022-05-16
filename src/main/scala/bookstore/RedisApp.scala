@@ -50,10 +50,7 @@ object RedisApp extends IOApp.Simple {
   override def run: IO[Unit] =
     Redis[IO].utf8("redis://localhost").use { redis =>
       for {
-        shoppingCarts <- ShoppingCarts.make(redis)
-        _ <- shoppingCarts.addItem(52251, 88, 88)
-        sc <- shoppingCarts.getCart(52251)
-        _ <- IO.println(sc)
+        _ <- redis.hSet("grzegorz", Map("key" -> "value"))
       } yield ()
     }
 }

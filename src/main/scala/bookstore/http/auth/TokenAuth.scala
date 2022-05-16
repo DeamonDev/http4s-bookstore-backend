@@ -33,17 +33,19 @@ import org.http4s.server.AuthMiddleware
 import pdi.jwt.JwtAlgorithm
 import pdi.jwt.JwtClaim
 import pdi.jwt.exceptions.JwtNonStringException
+import tokens._
 
 sealed abstract class TokenAuth[F[_]: Monad: Async](
     usersService: Users[F],
     jwtExpire: JwtExpire[F],
     jwtConfig: tokens.JwtAccessTokenKeyConfig,
-    exp: tokens.TokenExpiration
+    exp: TokenExpiration
 ) extends Http4sDsl[F] {
   def authRoutes(authedRoutes: AuthedRoutes[User, F]): HttpRoutes[F]
 }
 
 object TokenAuth {
+
   def make[F[_]: Monad: Async](
       usersService: Users[F],
       jwtExpire: JwtExpire[F],

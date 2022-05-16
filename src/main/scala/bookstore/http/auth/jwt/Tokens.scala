@@ -10,6 +10,7 @@ import cats.syntax.all._
 import pdi.jwt.JwtClaim
 import bookstore.tokens.data._
 import java.util.Random
+import scala.concurrent.duration._
 
 trait Tokens[F[_]] {
   def create: F[JwtToken]
@@ -17,9 +18,8 @@ trait Tokens[F[_]] {
 
 object Tokens {
   def make[F[_]: GenUUID: Monad](
-      jwtExpire: JwtExpire[F],
-      config: JwtAccessTokenKeyConfig,
-      exp: TokenExpiration,
+      config: JwtAccessTokenKeyConfig = JwtAccessTokenKeyConfig("secretkey"),
+      exp: TokenExpiration = TokenExpiration(20.days),
       claim: Claim
   ): Tokens[F] =
     new Tokens[F] {

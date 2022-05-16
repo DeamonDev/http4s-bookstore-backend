@@ -38,6 +38,7 @@ import org.reactormonk.PrivateKey
 
 import scala.io.Codec
 import scala.util.Random
+import org.typelevel.log4cats.Logger
 
 sealed abstract class Auth[F[_]: Monad: Async](
     postgres: Transactor[F]
@@ -50,7 +51,7 @@ sealed abstract class Auth[F[_]: Monad: Async](
 }
 
 object Auth {
-  def make[F[_]: Monad: Async](
+  def make[F[_]: Monad: Async: Logger](
       postgres: Transactor[F]
   ): F[Auth[F]] =
     Async[F].pure(new Auth[F](postgres) {

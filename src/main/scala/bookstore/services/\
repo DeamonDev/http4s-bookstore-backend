@@ -6,15 +6,13 @@ import cats.effect.IO
 import cats.effect.kernel.Async
 import cats.implicits._
 import doobie.implicits._
-import doobie.syntax._
 import doobie.util.ExecutionContexts
 import doobie.util.pos
 import doobie.util.query.Query0
+import doobie.util.transactor._
 import doobie.postgres._
 import fs2.Stream
 import org.typelevel.log4cats._
-
-import doobie._
 
 trait Users[F[_]] {
   def getCurrentIndex(): F[Int]
@@ -33,7 +31,6 @@ trait Users[F[_]] {
       password: String,
       firstName: String,
       lastName: String,
-      email: String,
       verified: Boolean
   ): F[Either[String, User]]
 }
@@ -96,13 +93,11 @@ object Users {
             lastName,
             email,
             verified
-          )
-            .attemptSomeSqlState { case sqlstate.class23.UNIQUE_VIOLATION =>
-              "user is already in the databse."
-            }
-        } yield e
-
-        userConnectionIO.transact(postgres)
+          ).withUniqueGeneratedKeys("username").attemptSomeSqlState {
+            case sqlstate.class23.UNIQUE_VIOLATION => "user is already in the databse."
+          }
+          u <- findUserByIdQuery(lv + 1).unique
+        } yield u
       }
     })
 }
@@ -143,9 +138,8 @@ private object UsersSql {
       lastName: String,
       email: String,
       verified: Boolean
-  ): ConnectionIO[User] =
+  ) =
     sql"""INSERT INTO users (user_id, username, password, first_name, last_name, email, verified)
             VALUES ($currentIndex, $username, $password, $firstName, $lastName, $email, $verified)""".update
-      .withUniqueGeneratedKeys("username")
 
 }

@@ -1,18 +1,25 @@
 package bookstore
 
 import bookstore.config.Config
+import bookstore.domain.tokens._
 import bookstore.domain.users
 import bookstore.http.AuthedHttpApi
 import bookstore.http.HttpApi
 import bookstore.http.auth.AdminAuth
 import bookstore.http.auth.Auth
+import bookstore.http.auth.TokenAuth
+import bookstore.http.auth.jwt.JwtExpire
+import bookstore.http.auth.jwt.Tokens
 import bookstore.http.routes.AdminRoutes
 import bookstore.http.routes.AuthorizationRoutes
+import bookstore.http.routes.JwtAuthRoutes
 import bookstore.resources.AppResources
 import bookstore.services.Admins
 import bookstore.services.Authors
 import bookstore.services.Books
+import bookstore.services.DbInitializer
 import bookstore.services.HttpServer
+import bookstore.services.ShoppingCarts
 import bookstore.services.Users
 import cats._
 import cats.effect.ExitCode
@@ -20,6 +27,7 @@ import cats.effect.IO
 import cats.effect.IOApp
 import cats.effect._
 import cats.implicits._
+import dev.profunktor.auth.jwt._
 import dev.profunktor.redis4cats.effect.MkRedis
 import dev.profunktor.redis4cats.log4cats._
 import doobie._
@@ -34,13 +42,6 @@ import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 import scala.concurrent.duration._
-import bookstore.http.auth.jwt.JwtExpire
-import bookstore.http.auth.jwt.Tokens
-import bookstore.domain.tokens._
-import dev.profunktor.auth.jwt._
-import bookstore.http.routes.JwtAuthRoutes
-import bookstore.http.auth.TokenAuth
-import bookstore.services.ShoppingCarts
 
 object BookStoreApp extends IOApp.Simple {
 
@@ -51,10 +52,9 @@ object BookStoreApp extends IOApp.Simple {
       appConfig <- Config.load[IO]
       appResources <- AppResources.make[IO](appConfig)
       transactor <- appResources.getPostgresTransactor()
+      //dbInitializer <- DbInitializer.make[IO](transactor)
+      //_ <- dbInitializer.initDb
       redisCommandsR <- appResources.getRedisCommands()
-      _ <- redisCommandsR.use { redisCommands =>
-        redisCommands.set("book_store_app", "ON")
-      }
       shoppingCarts <- ShoppingCarts.make[IO](redisCommandsR)
       booksService <- Books.make[IO](transactor)
       authorsService <- Authors.make[IO](transactor)
@@ -71,8 +71,18 @@ object BookStoreApp extends IOApp.Simple {
       exp = TokenExpiration(20.days)
       jwtAuth <-
         TokenAuth.make[IO](usersService, jwte, config, exp)
-      jwtRoutes = JwtAuthRoutes[IO](jwtAuth, usersService, redisCommandsR, shoppingCarts).httpRoutes
-      jwtAuthedRoutes = JwtAuthRoutes[IO](jwtAuth, usersService, redisCommandsR, shoppingCarts).authedHttpRoutes
+      jwtRoutes = JwtAuthRoutes[IO](
+        jwtAuth,
+        usersService,
+        redisCommandsR,
+        shoppingCarts
+      ).httpRoutes
+      jwtAuthedRoutes = JwtAuthRoutes[IO](
+        jwtAuth,
+        usersService,
+        redisCommandsR,
+        shoppingCarts
+      ).authedHttpRoutes
       routed = Router(
         "/" -> (httpRoutes <+> userRoutes),
         "admin" -> adminRoutes,
